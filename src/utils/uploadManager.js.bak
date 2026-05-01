@@ -1,0 +1,136 @@
+/**
+ * Upload Manager - Handles raster uploads with transactional safety
+ * Prevents race conditions and ensures data consistency
+ */
+
+import { saveRasterData, deleteRasterData } from './indexedDBManager'
+
+export class UploadTransaction {
+  constructor(category) {
+    this.category = category
+    this.steps = []
+    this.completed = []
+    this.failed = false
+  }
+
+  addStep(name, fn) {
+    this.steps.push({ name, fn })
+    return this
+  }
+
+  async execute() {
+    logger.debug("uploadManager", `📋 Starting upload transaction for ${this.category}`)
+
+    try {
+      for (const step of this.steps) {
+        logger.debug("uploadManager", `  ▶️ ${step.name}...`)
+        const result = await step.fn()
+        this.completed.push(step.name)
+        logger.debug("uploadManager", `  ✓ ${step.name} completed`)
+      }
+
+      logger.debug("uploadManager", `✅ Upload transaction completed: ${this.completed.join(' → ')}`)
+      return true
+    } catch (err) {
+      this.failed = true
+      logger.error("uploadManager", `❌ Upload transaction failed at: ${this.completed[this.completed.length - 1]}`)
+      logger.error("uploadManager", `Error: ${err.message}`)
+
+      // Rollback changes
+      await this.rollback()
+      throw err
+    }
+  }
+
+  async rollback() {
+    logger.debug("uploadManager", `🔄 Rolling back transaction for ${this.category}...`)
+    try {
+      // Remove any partial data that was saved
+      await deleteRasterData(this.category)
+      logger.debug("uploadManager", `  ✓ Rollback complete`)
+    } catch (rollbackErr) {
+      logger.error("uploadManager", `  ⚠️ Rollback failed: ${rollbackErr.message}`)
+    }
+  }
+}
+
+/**
+ * Check if device has enough storage space
+ */
+export async function checkStorageSpace(requiredBytes) {
+  if (!navigator.storage?.estimate) {
+    console.warn('Storage estimation not available')
+    return true
+  }
+
+  try {
+    const estimate = await navigator.storage.estimate()
+    const availableBytes = estimate.quota - estimate.usage
+
+    if (availableBytes < requiredBytes) {
+      const availableMB = (availableBytes / 1024 / 1024).toFixed(1)
+      const requiredMB = (requiredBytes / 1024 / 1024).toFixed(1)
+      throw new Error(
+        `Insufficient storage: ${availableMB}MB available, ${requiredMB}MB required`
+      )
+    }
+
+    return true
+  } catch (err) {
+    logger.error("uploadManager", 'Storage check failed:', err)
+    return false
+  }
+}
+
+/**
+ * Validate raster data before saving
+ */
+export function validateRasterData(rasterData) {
+  const errors = []
+
+  if (!rasterData.width || !rasterData.height) {
+    errors.push('Missing width or height')
+  }
+
+  if (!rasterData.pixels || rasterData.pixels.length === 0) {
+    errors.push('Missing pixel data')
+  }
+
+  if (!rasterData.geotransform || rasterData.geotransform.length !== 6) {
+    errors.push('Invalid geotransform')
+  }
+
+  if (!rasterData.crs) {
+    errors.push('Missing CRS information')
+  }
+
+  if (!rasterData.bounds) {
+    errors.push('Missing bounds information')
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  }
+}
+
+/**
+ * Compress raster data to reduce storage
+ */
+export function compressRasterData(rasterData) {
+  const compressed = {
+    ...rasterData,
+    // Could implement actual compression here
+    // For now, just quantize float32 to uint16 for grayscale
+    compressed: true
+  }
+
+  return compressed
+}
+
+export default {
+  UploadTransaction,
+  checkStorageSpace,
+  validateRasterData,
+  compressRasterData
+}
