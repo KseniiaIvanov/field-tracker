@@ -32,7 +32,7 @@ export default function Weather({ control, watch, setValue }) {
                 navigator.geolocation.getCurrentPosition(
                   (position) => {
                     const { latitude, longitude } = position.coords
-                    alert(`Location: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}\n\nWeather sync feature coming soon!\n(Will fetch from weather API using your location)`)
+                    alert(`Location detected: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}`)
                   },
                   (error) => {
                     alert('Enable location to sync weather from phone')

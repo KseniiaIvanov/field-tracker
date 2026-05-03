@@ -24,14 +24,14 @@ export default function PointInfo({ control, watch, setValue }) {
   useEffect(() => {
     const now = new Date()
 
-    // Auto-fill time
+    // Auto-fill time if not set
     if (!data.localTime) {
       const hours = String(now.getHours()).padStart(2, '0')
       const minutes = String(now.getMinutes()).padStart(2, '0')
       setValue('localTime', `${hours}:${minutes}`)
     }
 
-    // Auto-fill GPS
+    // Auto-fill GPS coordinates if available
     if ('geolocation' in navigator && !data.latitude) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -64,7 +64,14 @@ export default function PointInfo({ control, watch, setValue }) {
       reader.onload = async (event) => {
         try {
           const binaryData = event.target.result
-          const exifData = piexif.load(binaryData)
+          // Convert ArrayBuffer to binary string for piexif
+          let binary = ''
+          const bytes = new Uint8Array(binaryData)
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i])
+          }
+
+          const exifData = piexif.load(binary)
 
           // Check if GPS data exists
           if (exifData.GPS) {
@@ -101,22 +108,22 @@ export default function PointInfo({ control, watch, setValue }) {
               console.log('Altitude from photo:', altitude)
             }
 
-            setPhotoMessage('✓ GPS координаты из фото загружены успешно')
+            setPhotoMessage('✓ GPS coordinates extracted from photo')
           } else {
-            setPhotoMessage('⚠️ В фото нет GPS координат. Убедитесь что геолокация была включена при съёмке')
+            setPhotoMessage('⚠️ No GPS data found in photo. Enable geolocation when taking photos')
           }
 
           // Store photo for display
           const photoUrl = URL.createObjectURL(file)
           setUploadedPhoto(photoUrl)
         } catch (err) {
-          setPhotoMessage('❌ Ошибка при чтении EXIF данных: ' + err.message)
+          setPhotoMessage('❌ Error reading EXIF data. Try another photo.')
           console.error('EXIF read error:', err)
         }
       }
       reader.readAsArrayBuffer(file)
     } catch (err) {
-      setPhotoMessage('❌ Ошибка при загрузке фото: ' + err.message)
+      setPhotoMessage('❌ Error loading photo: ' + err.message)
     }
   }
 
@@ -355,52 +362,52 @@ export default function PointInfo({ control, watch, setValue }) {
             </select>
           </div>
 
-          <div className="field-row-3">
-            <div className="field-group">
-              <label>Landscape Type</label>
-              <div className="autocomplete-container">
-                <input
-                  type="text"
-                  placeholder="RTS, Polygon, Shore..."
-                  value={data.landscape}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    setValue('landscape', value)
+          <div className="field-group">
+            <label>Landscape Type</label>
+            <div className="autocomplete-container">
+              <input
+                type="text"
+                placeholder="RTS, Polygon, Shore..."
+                value={data.landscape}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setValue('landscape', value)
 
-                    // Filter suggestions
-                    if (value.length > 0) {
-                      const filtered = allLandscapes.filter(l =>
-                        l.toLowerCase().includes(value.toLowerCase())
-                      )
-                      setLandscapeSuggestions(filtered)
-                    } else {
-                      setLandscapeSuggestions([])
-                    }
-                  }}
-                />
-                {landscapeSuggestions.length > 0 && (
-                  <div className="autocomplete-suggestions">
-                    {landscapeSuggestions.map((suggestion) => (
-                      <div
-                        key={suggestion}
-                        className="suggestion-item"
-                        onClick={() => {
-                          setValue('landscape', suggestion)
-                          setLandscapeSuggestions([])
-                          // Add to history if new
-                          if (!allLandscapes.includes(suggestion)) {
-                            setAllLandscapes([...allLandscapes, suggestion])
-                          }
-                        }}
-                      >
-                        {suggestion}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                  // Filter suggestions
+                  if (value.length > 0) {
+                    const filtered = allLandscapes.filter(l =>
+                      l.toLowerCase().includes(value.toLowerCase())
+                    )
+                    setLandscapeSuggestions(filtered)
+                  } else {
+                    setLandscapeSuggestions([])
+                  }
+                }}
+              />
+              {landscapeSuggestions.length > 0 && (
+                <div className="autocomplete-suggestions">
+                  {landscapeSuggestions.map((suggestion) => (
+                    <div
+                      key={suggestion}
+                      className="suggestion-item"
+                      onClick={() => {
+                        setValue('landscape', suggestion)
+                        setLandscapeSuggestions([])
+                        // Add to history if new
+                        if (!allLandscapes.includes(suggestion)) {
+                          setAllLandscapes([...allLandscapes, suggestion])
+                        }
+                      }}
+                    >
+                      {suggestion}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+          </div>
 
+          <div className="field-row-2">
             <div className="field-group">
               <label>Soil Moisture (%)</label>
               <input

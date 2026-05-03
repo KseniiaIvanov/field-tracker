@@ -231,9 +231,11 @@ function ParameterDistributions({ entries }) {
       )
     }
 
-    const SVG_WIDTH = 600
-    const SVG_HEIGHT = 300
-    const PADDING = { top: 20, right: 20, bottom: 40, left: 50 }
+    // Responsive SVG size
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
+    const SVG_WIDTH = isMobile ? 320 : 480
+    const SVG_HEIGHT = isMobile ? 220 : 280
+    const PADDING = isMobile ? { top: 15, right: 15, bottom: 30, left: 40 } : { top: 20, right: 20, bottom: 40, left: 50 }
     const CHART_WIDTH = SVG_WIDTH - PADDING.left - PADDING.right
     const CHART_HEIGHT = SVG_HEIGHT - PADDING.top - PADDING.bottom
 
@@ -405,7 +407,7 @@ function ParameterDistributions({ entries }) {
     <div style={{ marginTop: '16px' }}>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(650px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
         gap: '16px'
       }}>
         <ParameterHistogram

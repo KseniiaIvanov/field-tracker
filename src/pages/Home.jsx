@@ -117,11 +117,13 @@ export default function Home({ setCurrentPage, allEntries }) {
             key={item.id}
             className="menu-card"
             onClick={() => setCurrentPage(item.id)}
-            style={{ borderTopColor: item.color }}
+            style={{ borderLeftColor: item.color }}
           >
             <div className="menu-icon">{item.icon}</div>
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
+            <div style={{ flex: 1 }}>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+            </div>
           </button>
         ))}
       </div>
