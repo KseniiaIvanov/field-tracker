@@ -50,7 +50,24 @@ export default function Statistics({ setCurrentPage, allEntries }) {
     <div className="page-content">
       <button className="btn-back" onClick={() => setCurrentPage('home')}>← Back to Menu</button>
 
-      <h2>Statistics</h2>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+        <h2 style={{ margin: 0 }}>Statistics</h2>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '6px 10px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: '600'
+          }}
+        >
+          🔄 Recalculate
+        </button>
+      </div>
 
       {/* Tab Navigation */}
       <div style={{
