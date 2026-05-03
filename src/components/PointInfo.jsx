@@ -20,7 +20,7 @@ export default function PointInfo({ control, watch, setValue }) {
     }))
   }
 
-  // Auto-fill current time and GPS on mount
+  // Auto-fill current time on mount
   useEffect(() => {
     const now = new Date()
 
@@ -30,21 +30,27 @@ export default function PointInfo({ control, watch, setValue }) {
       const minutes = String(now.getMinutes()).padStart(2, '0')
       setValue('localTime', `${hours}:${minutes}`)
     }
+  }, [])
 
-    // Auto-fill GPS coordinates if available
-    if ('geolocation' in navigator && !data.latitude) {
+  // Get GPS coordinates on demand
+  const getGPSCoordinates = () => {
+    if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setValue('latitude', position.coords.latitude.toFixed(6))
           setValue('longitude', position.coords.longitude.toFixed(6))
           setValue('accuracy', Math.round(position.coords.accuracy))
+          alert('✅ GPS coordinates loaded')
         },
         (error) => {
-          console.log('GPS unavailable:', error.message)
+          alert('❌ GPS unavailable. Enable location in settings.')
+          console.log('GPS error:', error.message)
         }
       )
+    } else {
+      alert('❌ Geolocation not supported on this device')
     }
-  }, [])
+  }
 
   const incrementSite = () => {
     setValue('siteNumber', (data.siteNumber || 1) + 1)
@@ -287,6 +293,29 @@ export default function PointInfo({ control, watch, setValue }) {
             )}
           </div>
 
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <button
+              type="button"
+              onClick={getGPSCoordinates}
+              style={{
+                padding: '6px 10px',
+                backgroundColor: '#2196F3',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '600',
+                minHeight: '32px'
+              }}
+            >
+              📍 Get GPS
+            </button>
+            <small style={{ fontSize: '11px', color: '#999', alignSelf: 'center' }}>
+              Click to fetch coordinates
+            </small>
+          </div>
+
           <div className="field-group">
             <label>GPS Latitude</label>
             <input
@@ -300,7 +329,7 @@ export default function PointInfo({ control, watch, setValue }) {
                 const validation = validateCoordinates(value, data.longitude)
                 setFieldError('coords', validation.valid ? null : validation.message)
               }}
-              placeholder="Auto-detected from phone or photo"
+              placeholder="Tap 'Get GPS' or enter manually"
               style={{
                 borderColor: errors.coords ? '#d32f2f' : undefined
               }}
@@ -321,7 +350,7 @@ export default function PointInfo({ control, watch, setValue }) {
                 const validation = validateCoordinates(data.latitude, value)
                 setFieldError('coords', validation.valid ? null : validation.message)
               }}
-              placeholder="Auto-detected from phone or photo"
+              placeholder="Tap 'Get GPS' or enter manually"
               style={{
                 borderColor: errors.coords ? '#d32f2f' : undefined
               }}
