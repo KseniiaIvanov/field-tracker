@@ -42,12 +42,12 @@ export default function QuickEntry({ control, watch, setValue, onSave, onBack, a
     }
 
     setIsCollectingGPS(true)
-    setGpsStatus('📍 Collecting GPS (2 min)...')
+    setGpsStatus('📍 Collecting GPS (1 min)...')
     setGpsProgress(0)
 
     const readings = []
     let watchId = null
-    const durationMs = 120000
+    const durationMs = 60000
     const startTime = Date.now()
     let lastUpdateTime = startTime
 
@@ -126,7 +126,7 @@ export default function QuickEntry({ control, watch, setValue, onSave, onBack, a
   }
 
   return (
-    <div className="quick-entry">
+    <div className="quick-entry" style={{ paddingTop: '70px' }}>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', justifyContent: 'space-between' }}>
         <button
           className="btn-back"

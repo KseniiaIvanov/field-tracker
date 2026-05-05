@@ -70,46 +70,32 @@ export default function VegetationLong({ control, watch, setValue }) {
       {isExpanded && (
         <div className="section-content">
           {longVegData.map((species) => (
-            <div key={species.id} className="species-item">
+            <div key={species.id} className="species-item" style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ minWidth: '100px', fontWeight: 600 }}>Species Name</label>
                 <input
                   type="text"
                   value={species.name}
                   onChange={(e) => updateSpecies(species.id, 'name', e.target.value)}
-                  style={{ minWidth: '200px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}
+                  placeholder="Species name"
+                  style={{ flex: 1, maxWidth: '280px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px', fontWeight: '600' }}
                 />
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ minWidth: '100px', fontWeight: 600 }}>Percentage (%)</label>
-                <div className="percentage-input" style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: '200px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: '150px' }}>
                   <input
                     type="range"
                     min="0"
                     max="100"
                     value={species.percentage}
                     onChange={(e) => updateSpecies(species.id, 'percentage', parseInt(e.target.value))}
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: '80px' }}
                   />
-                  <span className="value-display" style={{ minWidth: '40px' }}>{species.percentage}%</span>
+                  <span style={{ minWidth: '40px', fontWeight: '600', fontSize: '12px' }}>{species.percentage}%</span>
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ minWidth: '100px', fontWeight: 600 }}>Notes</label>
-                <input
-                  type="text"
-                  value={species.notes || ''}
-                  onChange={(e) => updateSpecies(species.id, 'notes', e.target.value)}
-                  placeholder="Optional notes"
-                  style={{ minWidth: '200px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}
-                />
-              </div>
-
-              <div className="species-actions">
-                <button className="btn-delete" onClick={() => removeSpecies(species.id)}>
-                  ✕ Remove
+                <button
+                  className="btn-delete"
+                  onClick={() => removeSpecies(species.id)}
+                  style={{ padding: '6px 10px', fontSize: '14px', minWidth: '40px', flexShrink: 0 }}
+                >
+                  ✕
                 </button>
               </div>
             </div>
@@ -137,10 +123,21 @@ export default function VegetationLong({ control, watch, setValue }) {
           </div>
 
           {longVegData.length > 0 && (
-            <div className="total-coverage">
+            <div className="total-coverage" style={{ marginTop: '16px', marginBottom: '24px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
               <strong>Total Coverage: {Math.min(100, longVegData.reduce((sum, s) => sum + (s.percentage || 0), 0))}%</strong>
             </div>
           )}
+
+          <div className="field-group" style={{ marginBottom: '24px' }}>
+            <label>General Notes (all species)</label>
+            <textarea
+              value={data.vegetationLongNotes || ''}
+              onChange={(e) => setValue('vegetationLongNotes', e.target.value)}
+              placeholder="Optional notes about vegetation composition or observations..."
+              rows="3"
+              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%' }}
+            />
+          </div>
 
           <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
             <h3 style={{ marginBottom: '12px' }}>Vegetation Photos</h3>

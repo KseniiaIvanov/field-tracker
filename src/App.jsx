@@ -112,6 +112,7 @@ function App() {
       vegetationShortNotes: '',
       vegetationLong: [],
       vegetationLongPhotos: [],
+      vegetationLongNotes: '',
       soilProfile: [],
       morphology: '',
       notes: '',
@@ -182,7 +183,7 @@ function App() {
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - gpsAveraging.startTime
-      const progress = Math.min(100, Math.round((elapsed / 120000) * 100))
+      const progress = Math.min(100, Math.round((elapsed / 60000) * 100))
 
       setGpsAveraging(prev => ({
         ...prev,
@@ -190,8 +191,8 @@ function App() {
         status: `📍 GPS averaging... ${progress}% (${Math.round(elapsed / 1000)}s)`
       }))
 
-      // Auto-finalize after 120 seconds
-      if (elapsed >= 120000 && gpsAveraging.readings.length > 0) {
+      // Auto-finalize after 60 seconds
+      if (elapsed >= 60000 && gpsAveraging.readings.length > 0) {
         const readings = gpsAveraging.readings
         const avgLat = readings.reduce((sum, r) => sum + r.lat, 0) / readings.length
         const avgLon = readings.reduce((sum, r) => sum + r.lon, 0) / readings.length
@@ -362,6 +363,7 @@ function App() {
         vegetationShortNotes: '',
         vegetationLong: [],
         vegetationLongPhotos: [],
+        vegetationLongNotes: '',
         soilProfile: [],
         morphology: '',
         notes: '',
