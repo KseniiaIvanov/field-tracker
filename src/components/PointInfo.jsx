@@ -345,9 +345,8 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             <label>Site Number</label>
             <div className="point-controls" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button
-                className="btn-small"
                 onClick={decrementSite}
-                style={{ padding: '10px 14px', fontSize: '16px', fontWeight: 'bold', minWidth: '40px', cursor: 'pointer' }}
+                style={{ padding: '10px 14px', fontSize: '18px', fontWeight: 'bold', minWidth: '40px', cursor: 'pointer', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px' }}
               >
                 −
               </button>
@@ -376,9 +375,8 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
                 }}
               />
               <button
-                className="btn-small"
                 onClick={incrementSite}
-                style={{ padding: '10px 14px', fontSize: '16px', fontWeight: 'bold', minWidth: '40px', cursor: 'pointer' }}
+                style={{ padding: '10px 14px', fontSize: '18px', fontWeight: 'bold', minWidth: '40px', cursor: 'pointer', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px' }}
               >
                 +
               </button>

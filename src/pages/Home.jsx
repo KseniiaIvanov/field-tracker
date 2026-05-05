@@ -75,7 +75,7 @@ export default function Home({ setCurrentPage, allEntries, onSelectStorageFolder
     : 'N/A'
 
   return (
-    <div className="home-page">
+    <div className="home-page" style={{ paddingTop: '70px' }}>
       {storageAvailable && !deviceStoragePath && (
         <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#e3f2fd', borderRadius: '8px', border: '2px solid #1976d2' }}>
           <div style={{ marginBottom: '8px', fontWeight: '700', color: '#1565c0' }}>
