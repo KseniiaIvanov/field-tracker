@@ -466,12 +466,12 @@ function App() {
                   </div>
 
               {/* PROGRESS BAR */}
-              <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '3px', marginBottom: '24px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '3px', marginBottom: '32px', overflow: 'hidden' }}>
                 <div style={{ width: `${(currentStep / WIZARD_STEPS.length) * 100}%`, height: '100%', backgroundColor: 'var(--success-color)', transition: 'width 0.3s ease' }} />
               </div>
 
               {/* TOP NAVIGATION BUTTONS */}
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', justifyContent: 'center' }}>
                 <button
                   onClick={prevStep}
                   disabled={currentStep === 1}
@@ -511,7 +511,7 @@ function App() {
 
               {/* CARBON FLUX TOGGLE */}
               {currentStep === 1 && (
-                <div className="carbon-flux-toggle" style={{ marginBottom: '24px' }}>
+                <div className="carbon-flux-toggle" style={{ marginBottom: '32px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
                   <label className="carbon-flux-label">
                     <input
                       type="checkbox"

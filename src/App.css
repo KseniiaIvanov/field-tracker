@@ -155,8 +155,7 @@ body {
   overflow: hidden;
   box-shadow: var(--shadow);
   transition: all 0.2s;
-  padding-top: 70px;
-  margin-top: -70px;
+  margin-top: 0;
 }
 
 .section.collapsed {
