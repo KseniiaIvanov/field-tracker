@@ -388,22 +388,24 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             )}
           </div>
 
-          <div className="field-group">
-            <label>Date</label>
-            <input
-              type="date"
-              value={data.date}
-              onChange={(e) => setValue('date', e.target.value)}
-            />
-          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="field-group">
+              <label>Date</label>
+              <input
+                type="date"
+                value={data.date}
+                onChange={(e) => setValue('date', e.target.value)}
+              />
+            </div>
 
-          <div className="field-group">
-            <label>Local Time</label>
-            <input
-              type="time"
-              value={data.localTime}
-              onChange={(e) => setValue('localTime', e.target.value)}
-            />
+            <div className="field-group">
+              <label>Local Time</label>
+              <input
+                type="time"
+                value={data.localTime}
+                onChange={(e) => setValue('localTime', e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="field-group">
@@ -442,7 +444,7 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
 
           {/* Photo Upload Section */}
           <div className="field-group">
-            <label>📸 Photo for Coordinates (optional)</label>
+            <label>📸 Photo for Coordinates</label>
             <div style={{
               padding: '12px',
               backgroundColor: '#f5f5f5',
