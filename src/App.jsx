@@ -45,7 +45,7 @@ function getDefaultVegetationShort() {
   ]
   const result = {}
   categories.forEach(cat => {
-    result[cat] = { coverage: 0, height: '', notes: '' }
+    result[cat] = { coverage: 0, height: '' }
   })
   return result
 }
@@ -109,6 +109,7 @@ function App() {
       weather: {},
       vegetationShort: getDefaultVegetationShort(),
       vegetationShortPhotos: [],
+      vegetationShortNotes: '',
       vegetationLong: [],
       vegetationLongPhotos: [],
       soilProfile: [],
@@ -358,6 +359,7 @@ function App() {
         weather: {},
         vegetationShort: getDefaultVegetationShort(),
         vegetationShortPhotos: [],
+        vegetationShortNotes: '',
         vegetationLong: [],
         vegetationLongPhotos: [],
         soilProfile: [],

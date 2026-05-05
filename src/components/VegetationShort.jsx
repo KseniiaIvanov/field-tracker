@@ -117,17 +117,6 @@ export default function VegetationShort({ control, watch, setValue }) {
                 <span style={{ fontWeight: 600, fontSize: '12px', flexShrink: 0 }}>cm</span>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ width: '70px', fontWeight: 600, fontSize: '12px', flexShrink: 0 }}>Notes</label>
-                <input
-                  type="text"
-                  value={shortVegData[category]?.notes || ''}
-                  onChange={(e) => updateVegetation(category, 'notes', e.target.value)}
-                  placeholder="Optional notes"
-                  style={{ flex: 1, maxWidth: '220px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px' }}
-                />
-              </div>
-
             </div>
           ))}
 
@@ -147,7 +136,7 @@ export default function VegetationShort({ control, watch, setValue }) {
                   if (customInput.trim()) {
                     const customName = customInput.trim()
                     const updated = { ...shortVegData }
-                    updated[customName] = { coverage: 0, height: '', notes: '' }
+                    updated[customName] = { coverage: 0, height: '' }
                     setValue('vegetationShort', updated)
                     setCustomInput('')
                   }
@@ -156,6 +145,17 @@ export default function VegetationShort({ control, watch, setValue }) {
                 + Add
               </button>
             </div>
+          </div>
+
+          <div className="field-group" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
+            <label>General Notes (all groups)</label>
+            <textarea
+              value={data.vegetationShortNotes || ''}
+              onChange={(e) => setValue('vegetationShortNotes', e.target.value)}
+              placeholder="Optional notes about vegetation coverage, distribution, or observations..."
+              rows="3"
+              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%' }}
+            />
           </div>
 
           <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
