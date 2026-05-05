@@ -857,6 +857,85 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
               />
             </div>
           </div>
+
+          {/* SITE PHOTO - REQUIRED */}
+          <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#fff3e0', borderRadius: '8px', border: '2px solid #ff9800' }}>
+            <div style={{ marginBottom: '12px', fontWeight: '700', color: '#e65100', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px' }}>⚠️</span>
+              <span>Site Photo (REQUIRED)</span>
+            </div>
+            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#e65100', lineHeight: '1.5' }}>
+              Every site must have at least one photo. This helps document the location and conditions.
+            </p>
+            <div style={{
+              padding: '12px',
+              backgroundColor: '#fff',
+              borderRadius: '6px',
+              marginBottom: '12px',
+              border: '2px dashed #ff9800'
+            }}>
+              <label style={{ display: 'inline-block', padding: '12px 16px', backgroundColor: '#ff9800', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+                📷 Add Site Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onloadend = () => {
+                        const newPhoto = {
+                          id: Date.now(),
+                          originalData: reader.result,
+                          previewData: reader.result,
+                          name: file.name,
+                          type: file.type
+                        }
+                        const currentPhotos = data.entryPhotos || []
+                        setValue('entryPhotos', [...currentPhotos, newPhoto])
+                      }
+                      reader.readAsDataURL(file)
+                    }
+                    e.target.value = ''
+                  }}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+
+            {(data.entryPhotos && data.entryPhotos.length > 0) && (
+              <div>
+                <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: '600', color: '#2e7d32' }}>
+                  ✅ {data.entryPhotos.length} photo{data.entryPhotos.length > 1 ? 's' : ''} added
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
+                  {data.entryPhotos.map((photo, idx) => (
+                    <div key={photo.id} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#f0f0f0' }}>
+                      <img
+                        src={photo.previewData || photo.originalData}
+                        alt={`Site photo ${idx + 1}`}
+                        style={{ width: '100%', height: '80px', objectFit: 'cover' }}
+                      />
+                      <button
+                        onClick={() => {
+                          setValue('entryPhotos', (data.entryPhotos || []).filter(p => p.id !== photo.id))
+                        }}
+                        style={{ position: 'absolute', top: '2px', right: '2px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', padding: 0 }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(!data.entryPhotos || data.entryPhotos.length === 0) && (
+              <p style={{ margin: 0, fontSize: '12px', color: '#d32f2f', fontWeight: '600' }}>
+                ❌ No photos added yet - you must add at least one photo before saving
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

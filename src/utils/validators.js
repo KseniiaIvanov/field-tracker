@@ -474,6 +474,11 @@ export function validateCompleteEntry(entry) {
     errors.push(coordCheck.error)
   }
 
+  // Required: Site photos
+  if (!entry.entryPhotos || entry.entryPhotos.length === 0) {
+    errors.push('❌ Site photo is REQUIRED - please add at least one photo of the site')
+  }
+
   // Optional fields with validation
   if (entry.date) {
     const dateCheck = timestampValidators.isoDate(entry.date)
