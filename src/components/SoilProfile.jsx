@@ -20,26 +20,12 @@ export default function SoilProfile({ control, watch, setValue }) {
     }))
   }
 
-  const soilStructures = [
-    'Granular',
-    'Crumb',
-    'Platy',
-    'Prismatic',
-    'Columnar',
-    'Massive',
-    'Single grain'
-  ]
-
-  const soilColors = [
-    'Black',
-    'Dark brown',
-    'Brown',
-    'Light brown',
-    'Yellowish brown',
-    'Reddish brown',
-    'Gray',
-    'Dark gray',
-    'Light gray'
+  const soilTypes = [
+    'Sand',
+    'Clay',
+    'Loam',
+    'Mixed',
+    'Organic'
   ]
 
   const addLayer = () => {
@@ -47,10 +33,7 @@ export default function SoilProfile({ control, watch, setValue }) {
       id: Date.now(),
       depthFrom: '',
       depthTo: '',
-      color: '',
-      structure: '',
-      moisture: 'moist',
-      texture: '',
+      soilType: '',
       notes: ''
     }
     setValue('soilProfile', [...soilData, newLayer])
@@ -95,8 +78,12 @@ export default function SoilProfile({ control, watch, setValue }) {
                   }}
                   placeholder="Thaw depth"
                   style={{
-                    flex: 1,
-                    borderColor: errors.activeLayer ? '#d32f2f' : undefined
+                    minWidth: '80px',
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    border: errors.activeLayer ? '1px solid #d32f2f' : '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '10px 12px'
                   }}
                 />
                 <span style={{ fontWeight: 600, minWidth: '30px' }}>cm</span>
@@ -124,8 +111,12 @@ export default function SoilProfile({ control, watch, setValue }) {
                   }}
                   placeholder="Organic layer thickness"
                   style={{
-                    flex: 1,
-                    borderColor: errors.organicLayer ? '#d32f2f' : undefined
+                    minWidth: '80px',
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    border: errors.organicLayer ? '1px solid #d32f2f' : '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '10px 12px'
                   }}
                 />
                 <span style={{ fontWeight: 600, minWidth: '30px' }}>cm</span>
@@ -152,8 +143,12 @@ export default function SoilProfile({ control, watch, setValue }) {
                   }}
                   placeholder="At measurement depth"
                   style={{
-                    flex: 1,
-                    borderColor: errors.soilTemp ? '#d32f2f' : undefined
+                    minWidth: '80px',
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    border: errors.soilTemp ? '1px solid #d32f2f' : '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '10px 12px'
                   }}
                 />
                 <span style={{ fontWeight: 600, minWidth: '40px' }}>°C</span>
@@ -177,6 +172,42 @@ export default function SoilProfile({ control, watch, setValue }) {
                 <option value="saturated">Saturated</option>
               </select>
             </div>
+
+            <div className="field-group">
+              <label>Standing Water Present</label>
+              <select
+                value={data.standingWater ? 'yes' : 'no'}
+                onChange={(e) => setValue('standingWater', e.target.value === 'yes')}
+              >
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+
+            {data.standingWater && (
+              <div className="field-group">
+                <label>Standing Water Depth</label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={data.standingWaterDepth || ''}
+                    onChange={(e) => setValue('standingWaterDepth', parseFloat(e.target.value) || '')}
+                    placeholder="Water depth"
+                    style={{
+                      minWidth: '80px',
+                      backgroundColor: 'var(--bg-primary)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      padding: '10px 12px'
+                    }}
+                  />
+                  <span style={{ fontWeight: 600, minWidth: '30px' }}>cm</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <h3>Soil Layers</h3>
@@ -206,8 +237,12 @@ export default function SoilProfile({ control, watch, setValue }) {
                         }
                       }}
                       style={{
-                        flex: 1,
-                        borderColor: errors[`depth_${layer.id}`] ? '#d32f2f' : undefined
+                        minWidth: '80px',
+                        backgroundColor: 'var(--bg-primary)',
+                        color: 'var(--text-primary)',
+                        border: errors[`depth_${layer.id}`] ? '1px solid #d32f2f' : '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        padding: '10px 12px'
                       }}
                     />
                     <span style={{ fontWeight: 600, minWidth: '30px' }}>cm</span>
@@ -232,8 +267,12 @@ export default function SoilProfile({ control, watch, setValue }) {
                         }
                       }}
                       style={{
-                        flex: 1,
-                        borderColor: errors[`depth_${layer.id}`] ? '#d32f2f' : undefined
+                        minWidth: '80px',
+                        backgroundColor: 'var(--bg-primary)',
+                        color: 'var(--text-primary)',
+                        border: errors[`depth_${layer.id}`] ? '1px solid #d32f2f' : '1px solid var(--border-color)',
+                        borderRadius: '8px',
+                        padding: '10px 12px'
                       }}
                     />
                     <span style={{ fontWeight: 600, minWidth: '30px' }}>cm</span>
@@ -246,47 +285,14 @@ export default function SoilProfile({ control, watch, setValue }) {
                 </div>
 
                 <div className="field-group">
-                  <label>Color</label>
+                  <label>Soil Type</label>
                   <select
-                    value={layer.color}
-                    onChange={(e) => updateLayer(layer.id, 'color', e.target.value)}
+                    value={layer.soilType}
+                    onChange={(e) => updateLayer(layer.id, 'soilType', e.target.value)}
                   >
-                    <option value="">Select color...</option>
-                    {soilColors.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="">Select soil type...</option>
+                    {soilTypes.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
-                </div>
-
-                <div className="field-group">
-                  <label>Structure</label>
-                  <select
-                    value={layer.structure}
-                    onChange={(e) => updateLayer(layer.id, 'structure', e.target.value)}
-                  >
-                    <option value="">Select structure...</option>
-                    {soilStructures.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-
-                <div className="field-group">
-                  <label>Moisture</label>
-                  <select
-                    value={layer.moisture}
-                    onChange={(e) => updateLayer(layer.id, 'moisture', e.target.value)}
-                  >
-                    <option value="dry">Dry</option>
-                    <option value="moist">Moist</option>
-                    <option value="wet">Wet</option>
-                  </select>
-                </div>
-
-                <div className="field-group">
-                  <label>Texture</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Sandy clay loam"
-                    value={layer.texture}
-                    onChange={(e) => updateLayer(layer.id, 'texture', e.target.value)}
-                  />
                 </div>
 
                 <div className="field-group">
@@ -296,12 +302,9 @@ export default function SoilProfile({ control, watch, setValue }) {
                     onChange={(e) => updateLayer(layer.id, 'notes', e.target.value)}
                     placeholder="Detailed observations"
                     rows="2"
+                    style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%' }}
                   />
                 </div>
-
-                <button className="btn-photo" onClick={() => alert('Camera feature coming soon')}>
-                  📷 Add Photo
-                </button>
               </div>
             ))}
           </div>

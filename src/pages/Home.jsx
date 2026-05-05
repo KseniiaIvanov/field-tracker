@@ -1,4 +1,4 @@
-export default function Home({ setCurrentPage, allEntries }) {
+export default function Home({ setCurrentPage, allEntries, onSelectStorageFolder, deviceStoragePath, storageAvailable }) {
   const menuItems = [
     {
       id: 'diary',
@@ -76,40 +76,51 @@ export default function Home({ setCurrentPage, allEntries }) {
 
   return (
     <div className="home-page">
-      <div className="home-top-section">
-        <div className="home-header">
-          <h2>Welcome to Field Campaign Tracker</h2>
-          <div className="stats-row">
-            <div className="stat-item">
-              <span className="stat-label">Total Sites</span>
-              <span className="stat-value">{allEntries.length}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Today</span>
-              <span className="stat-value">{todayEntries}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Avg Temp</span>
-              <span className="stat-value">{avgTemp}°C</span>
-            </div>
+      {storageAvailable && !deviceStoragePath && (
+        <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#e3f2fd', borderRadius: '8px', border: '2px solid #1976d2' }}>
+          <div style={{ marginBottom: '8px', fontWeight: '700', color: '#1565c0' }}>
+            💾 Set Up Device Storage
           </div>
+          <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#0d47a1' }}>
+            Save field data directly to your phone's storage. Your data will be organized by date and site number.
+          </p>
+          <button
+            onClick={onSelectStorageFolder}
+            style={{
+              padding: '10px 16px',
+              backgroundColor: '#1976d2',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            📁 Select Storage Folder
+          </button>
         </div>
+      )}
 
-        {lastEntry && (
-          <div className="quick-actions">
-            <h3>Quick Actions</h3>
-            <button
-              className="btn-continue-last"
-              onClick={() => setCurrentPage('diary')}
-            >
-              <div className="btn-continue-content">
-                <span className="btn-continue-icon">▶ Continue</span>
-                <span className="btn-continue-text">Last site: {lastEntry.siteNumber} • {lastEntry.landscape || 'No landscape'}</span>
-              </div>
-            </button>
-          </div>
-        )}
-      </div>
+      {deviceStoragePath && (
+        <div style={{ marginBottom: '24px', padding: '12px 16px', backgroundColor: '#e8f5e9', borderRadius: '8px', border: '2px solid #388e3c', fontSize: '13px', color: '#1b5e20' }}>
+          ✅ {deviceStoragePath} - Every Site saves directly to your device
+        </div>
+      )}
+
+      {lastEntry && (
+        <div className="quick-actions" style={{ marginBottom: '24px' }}>
+          <button
+            className="btn-continue-last"
+            onClick={() => setCurrentPage('diary')}
+          >
+            <div className="btn-continue-content">
+              <span className="btn-continue-icon">▶ Continue</span>
+              <span className="btn-continue-text">Last site: {lastEntry.siteNumber} • {lastEntry.landscape || 'No landscape'}</span>
+            </div>
+          </button>
+        </div>
+      )}
 
       <div className="menu-grid">
         {menuItems.map((item) => (

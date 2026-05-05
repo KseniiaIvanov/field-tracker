@@ -1,151 +1,182 @@
 import { useState } from 'react'
 import { validateTemperature, validateWindSpeed } from '../utils/validation'
 
-export default function Weather({ control, watch, setValue }) {
+export default function Weather({ control, watch, setValue, previousEntry }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [tempError, setTempError] = useState(null)
   const [windError, setWindError] = useState(null)
   const data = watch()
-
   const weatherData = data.weather || {}
 
+  const copyFromPreviousEntry = () => {
+    if (previousEntry?.weather) {
+      setValue('weather', previousEntry.weather)
+      alert('✓ Weather copied from previous entry')
+    } else {
+      alert('❌ No previous weather data available')
+    }
+  }
+
   const updateWeather = (field, value) => {
-    setValue('weather', { ...weatherData, [field]: value })
+    const currentWeather = data.weather || {}
+    setValue('weather', { ...currentWeather, [field]: value })
   }
 
   return (
     <div className={`section ${!isExpanded ? 'collapsed' : ''}`}>
-      <button
-        className="section-header"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <h2>Weather Conditions</h2>
-        <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
-      </button>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <button
+          className="section-header"
+          onClick={() => setIsExpanded(!isExpanded)}
+          style={{ flex: 1 }}
+        >
+          <h2>Weather Conditions</h2>
+          <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
+        </button>
+        {previousEntry?.weather && (
+          <button onClick={copyFromPreviousEntry} className="copy-button" style={{ margin: '10px 12px', marginLeft: '0' }}>
+            📋 Copy
+          </button>
+        )}
+      </div>
 
       {isExpanded && (
         <div className="section-content">
-          <button
-            className="btn-sync-weather"
-            onClick={() => {
-              if ('geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                  (position) => {
-                    const { latitude, longitude } = position.coords
-                    alert(`Location detected: ${latitude.toFixed(2)}, ${longitude.toFixed(2)}`)
-                  },
-                  (error) => {
-                    alert('Enable location to sync weather from phone')
-                  }
-                )
-              }
-            }}
-          >
-            📍 Sync Weather from Phone
-          </button>
-
-          <div className="field-group">
-            <label>Cloud Cover (%)</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={weatherData.cloudCover || 0}
-              onChange={(e) => updateWeather('cloudCover', parseInt(e.target.value))}
-            />
-            <span className="value-display">{weatherData.cloudCover || 0}%</span>
-          </div>
-
-          <div className="field-group">
-            <label>Precipitation</label>
-            <select
-              value={weatherData.precipitation || 'none'}
-              onChange={(e) => updateWeather('precipitation', e.target.value)}
-            >
-              <option value="none">None</option>
-              <option value="drizzle">Drizzle</option>
-              <option value="light">Light Rain</option>
-              <option value="moderate">Moderate Rain</option>
-              <option value="heavy">Heavy Rain</option>
-              <option value="snow">Snow</option>
-              <option value="sleet">Sleet</option>
-            </select>
-          </div>
-
-          <div className="field-group">
-            <label>Wind Speed (m/s)</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div className="field-group">
+              <label style={{ fontSize: '12px' }}>Cloud Cover (%)</label>
               <input
-                type="number"
+                type="range"
                 min="0"
-                step="0.5"
-                value={weatherData.windSpeed || ''}
-                onChange={(e) => {
-                  const value = e.target.value
-                  const validation = validateWindSpeed(value)
-                  setWindError(validation.valid ? null : validation.message)
-                  updateWeather('windSpeed', parseFloat(value) || '')
-                }}
-                placeholder="e.g., 5.2"
-                style={{
-                  flex: 1,
-                  borderColor: windError ? '#d32f2f' : undefined
-                }}
+                max="100"
+                value={weatherData.cloudCover || 0}
+                onChange={(e) => updateWeather('cloudCover', parseInt(e.target.value))}
+                style={{ marginBottom: '4px' }}
               />
-              <span style={{ fontWeight: 600, minWidth: '40px' }}>m/s</span>
+              <span className="value-display" style={{ fontSize: '12px', display: 'block', textAlign: 'center' }}>{weatherData.cloudCover || 0}%</span>
             </div>
-            {windError && (
-              <small style={{ color: '#d32f2f', marginTop: '4px', display: 'block' }}>
-                ⚠️ {windError}
-              </small>
-            )}
+
+            <div className="field-group">
+              <label style={{ fontSize: '12px' }}>Precipitation</label>
+              <select
+                value={weatherData.precipitation || 'none'}
+                onChange={(e) => updateWeather('precipitation', e.target.value)}
+                style={{ fontSize: '13px', padding: '6px 4px' }}
+              >
+                <option value="none">None</option>
+                <option value="drizzle">Drizzle</option>
+                <option value="light">Light</option>
+                <option value="moderate">Moderate</option>
+                <option value="heavy">Heavy</option>
+                <option value="snow">Snow</option>
+                <option value="sleet">Sleet</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div className="field-group">
+              <label style={{ fontSize: '12px' }}>Air Temp (°C)</label>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={weatherData.temperature || ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    const validation = validateTemperature(value)
+                    setTempError(validation.valid ? null : validation.message)
+                    updateWeather('temperature', parseFloat(value) || '')
+                  }}
+                  placeholder="e.g., 8.3"
+                  style={{
+                    flex: 1,
+                    borderColor: tempError ? '#d32f2f' : undefined,
+                    padding: '6px 4px',
+                    fontSize: '13px'
+                  }}
+                />
+                <span style={{ fontWeight: 600, fontSize: '12px', minWidth: '24px' }}>°C</span>
+              </div>
+              {tempError && (
+                <small style={{ color: '#d32f2f', marginTop: '2px', display: 'block', fontSize: '11px' }}>
+                  ⚠️ {tempError}
+                </small>
+              )}
+            </div>
+
+            <div className="field-group">
+              <label style={{ fontSize: '12px' }}>Wind Speed (m/s)</label>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={weatherData.windSpeed || ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    const validation = validateWindSpeed(value)
+                    setWindError(validation.valid ? null : validation.message)
+                    updateWeather('windSpeed', parseFloat(value) || '')
+                  }}
+                  placeholder="e.g., 5.2"
+                  style={{
+                    flex: 1,
+                    borderColor: windError ? '#d32f2f' : undefined,
+                    padding: '6px 4px',
+                    fontSize: '13px'
+                  }}
+                />
+                <span style={{ fontWeight: 600, fontSize: '12px', minWidth: '32px' }}>m/s</span>
+              </div>
+              {windError && (
+                <small style={{ color: '#d32f2f', marginTop: '2px', display: 'block', fontSize: '11px' }}>
+                  ⚠️ {windError}
+                </small>
+              )}
+            </div>
           </div>
 
           <div className="field-group">
             <label>Wind Direction</label>
-            <select
-              value={weatherData.windDirection || 'calm'}
-              onChange={(e) => updateWeather('windDirection', e.target.value)}
-            >
-              <option value="calm">Calm</option>
-              <option value="N">North</option>
-              <option value="NE">Northeast</option>
-              <option value="E">East</option>
-              <option value="SE">Southeast</option>
-              <option value="S">South</option>
-              <option value="SW">Southwest</option>
-              <option value="W">West</option>
-              <option value="NW">Northwest</option>
-            </select>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '6px',
+              marginBottom: '8px'
+            }}>
+              {[
+                { value: 'calm', label: '⊗ Calm' },
+                { value: 'N', label: '↑ N' },
+                { value: 'NE', label: '↗ NE' },
+                { value: 'E', label: '→ E' },
+                { value: 'SE', label: '↘ SE' },
+                { value: 'S', label: '↓ S' },
+                { value: 'SW', label: '↙ SW' },
+                { value: 'W', label: '← W' },
+                { value: 'NW', label: '↖ NW' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => updateWeather('windDirection', option.value)}
+                  style={{
+                    padding: '8px 6px',
+                    backgroundColor: weatherData.windDirection === option.value ? 'var(--primary-color)' : 'var(--bg-secondary)',
+                    color: weatherData.windDirection === option.value ? 'white' : 'var(--text-primary)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="field-group">
-            <label>Air Temperature (°C)</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input
-                type="number"
-                step="0.1"
-                value={weatherData.temperature || ''}
-                onChange={(e) => {
-                  const value = e.target.value
-                  const validation = validateTemperature(value)
-                  setTempError(validation.valid ? null : validation.message)
-                  updateWeather('temperature', parseFloat(value) || '')
-                }}
-                placeholder="e.g., 5.3"
-                style={{
-                  flex: 1,
-                  borderColor: tempError ? '#d32f2f' : undefined
-                }}
-              />
-              <span style={{ fontWeight: 600, minWidth: '40px' }}>°C</span>
-            </div>
-            {tempError && (
-              <small style={{ color: '#d32f2f', marginTop: '4px', display: 'block' }}>
-                ⚠️ {tempError}
-              </small>
-            )}
-          </div>
         </div>
       )}
     </div>

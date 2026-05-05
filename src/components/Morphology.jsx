@@ -47,6 +47,7 @@ export default function Morphology({ control, watch, setValue }) {
               onChange={(e) => setValue('waterFeatures', e.target.value)}
               placeholder="Streams, lakes, drainage patterns..."
               rows="3"
+              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -57,12 +58,9 @@ export default function Morphology({ control, watch, setValue }) {
               onChange={(e) => setValue('morphologyNotes', e.target.value)}
               placeholder="Additional observations about landscape morphology"
               rows="3"
+              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
             />
           </div>
-
-          <button className="btn-photo" onClick={() => alert('Camera feature coming soon')}>
-            📷 Add Morphology Photo
-          </button>
         </div>
       )}
     </div>

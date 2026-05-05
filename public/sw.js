@@ -1,11 +1,11 @@
-const CACHE_NAME = 'field-tracker-v1'
-const RUNTIME_CACHE = 'field-tracker-runtime'
+const CACHE_NAME = 'field-tracker-v2'
+const RUNTIME_CACHE = 'field-tracker-runtime-v2'
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.svg'
+  '/field-tracker/',
+  '/field-tracker/index.html',
+  '/field-tracker/manifest.json',
+  '/field-tracker/favicon.svg'
 ]
 
 // Install event - cache static assets
