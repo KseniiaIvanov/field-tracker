@@ -19,27 +19,46 @@ export default function Export({ entries }) {
     }
 
     // Flatten the nested data structure for CSV
-    const flatData = entries.map(entry => ({
-      'Site Number': entry.siteNumber,
-      'Date': entry.date,
-      'Local Time': entry.localTime,
-      'UTC Offset': entry.utcOffset,
-      'Landscape': entry.landscape,
-      'Environment': entry.terrestrialAquatic,
-      'Cloud Cover %': entry.weather?.cloudCover,
-      'Precipitation': entry.weather?.precipitation,
-      'Wind Speed m/s': entry.weather?.windSpeed,
-      'Wind Direction': entry.weather?.windDirection,
-      'Air Temperature C': entry.weather?.temperature,
-      'Active Layer Depth cm': entry.activeLayerDepth,
-      'Organic Layer Depth cm': entry.organicLayerDepth,
-      'Soil Temperature C': entry.soilTemperature,
-      'Soil Moisture': entry.soilMoisture,
-      'Morphology': entry.morphology,
-      'Slope Angle deg': entry.slopeAngle,
-      'Aspect': entry.aspect,
-      'Notes': entry.notes
-    }))
+    const vegCategories = ['Shrubs', 'Dwarf Shrubs', 'Grass', 'Sedges', 'Green Mosses', 'Sphagnum Mosses', 'Brown Mosses', 'Lichens', 'Bare Peat', 'Litter Standing Dead']
+    const flatData = entries.map(entry => {
+      const vegCoverage = {}
+      vegCategories.forEach(cat => {
+        vegCoverage[`Veg_${cat.replace(/ /g, '_')}`] = entry.vegetationShort?.[cat]?.coverage ?? ''
+        vegCoverage[`Veg_${cat.replace(/ /g, '_')}_height_cm`] = entry.vegetationShort?.[cat]?.height ?? ''
+      })
+      return {
+        'Site Number': entry.siteNumber,
+        'Date': entry.date,
+        'Local Time': entry.localTime,
+        'UTC Offset': entry.utcOffset,
+        'Collector': entry.collector,
+        'Latitude': entry.latitude,
+        'Longitude': entry.longitude,
+        'GPS Accuracy m': entry.accuracy,
+        'Landscape': entry.landscape,
+        'Disturbance': entry.disturbance,
+        'Organic Matter Type': entry.organicMatterType,
+        'Environment': entry.terrestrialAquatic,
+        'Standing Water': entry.standingWater ? 'yes' : 'no',
+        'Standing Water Depth cm': entry.standingWaterDepth || '',
+        'Carbon Flux': entry.carbonFluxMeasurement ? 'yes' : 'no',
+        'Shadow Netting Layers': entry.shadowExperimentNetting,
+        'Cloud Cover %': entry.weather?.cloudCover,
+        'Precipitation': entry.weather?.precipitation,
+        'Wind Speed m/s': entry.weather?.windSpeed,
+        'Wind Direction': entry.weather?.windDirection,
+        'Air Temperature C': entry.weather?.temperature,
+        'Active Layer Depth cm': entry.activeLayerDepth,
+        'Organic Layer Depth cm': entry.organicLayerDepth,
+        'Soil Temperature C': entry.soilTemperature,
+        'Soil Moisture': entry.soilMoisture,
+        'Topography': entry.morphology,
+        'Water Features': entry.waterFeatures,
+        ...vegCoverage,
+        'Veg Short Notes': entry.vegetationShortNotes,
+        'Notes': entry.notes
+      }
+    })
 
     const csv = Papa.unparse(flatData)
     downloadFile(csv, 'field-diary.csv', 'text/csv')

@@ -64,11 +64,9 @@ function App() {
   const WIZARD_STEPS = [
     { num: 1, name: 'Site Information', component: 'PointInfo' },
     { num: 2, name: 'Weather', component: 'Weather' },
-    { num: 3, name: 'Vegetation (Short)', component: 'VegetationShort' },
-    { num: 4, name: 'Vegetation (Long)', component: 'VegetationLong' },
-    { num: 5, name: 'Soil Profile', component: 'SoilProfile' },
-    { num: 6, name: 'Morphology', component: 'Morphology' },
-    { num: 7, name: 'Review & Save', component: 'ReviewSave' }
+    { num: 3, name: 'Vegetation', component: 'VegetationShort' },
+    { num: 4, name: 'Soil & Morphology', component: 'SoilMorphology' },
+    { num: 5, name: 'Review & Save', component: 'ReviewSave' }
   ]
 
   const nextStep = () => {
@@ -133,6 +131,22 @@ function App() {
         const entries = await localforage.getItem('allEntries')
         if (entries) {
           setAllEntries(entries)
+        }
+
+        // Restore unsaved draft if present
+        const savedDraft = localStorage.getItem('field-diary-draft')
+        if (savedDraft) {
+          try {
+            const parsed = JSON.parse(savedDraft)
+            if (parsed.latitude || parsed.longitude || parsed.notes || parsed.landscape) {
+              reset(parsed)
+              showSuccess(`Draft restored: Site ${parsed.siteNumber || 1}`)
+            } else {
+              localStorage.removeItem('field-diary-draft')
+            }
+          } catch {
+            localStorage.removeItem('field-diary-draft')
+          }
         }
       } catch (error) {
         console.error('Error loading entries from storage:', error)
@@ -219,6 +233,22 @@ function App() {
 
     return () => clearInterval(interval)
   }, [gpsAveraging, setValue, showSuccess])
+
+  // Autosave draft 10s after last change (photos excluded to stay within localStorage 5MB limit)
+  useEffect(() => {
+    if (currentPage !== 'diary') return
+    const hasData = formData.latitude || formData.longitude || formData.notes || formData.landscape
+    if (!hasData) return
+    const timer = setTimeout(() => {
+      try {
+        const draft = { ...formData, entryPhotos: [], vegetationShortPhotos: [], vegetationLongPhotos: [] }
+        localStorage.setItem('field-diary-draft', JSON.stringify(draft))
+      } catch (e) {
+        console.warn('Draft save failed:', e)
+      }
+    }, 10000)
+    return () => clearTimeout(timer)
+  }, [formData, currentPage])
 
   const copyFromPrevious = () => {
     if (allEntries.length > 0) {
@@ -382,7 +412,8 @@ function App() {
       setTimeout(() => setSaveSuccess(false), 2000)
 
       showSuccess(`✅ Site ${formData.siteNumber} saved! Ready for site ${nextNumber}`)
-      setCurrentStep(1) // Reset wizard to step 1
+      localStorage.removeItem('field-diary-draft')
+      setCurrentStep(1)
 
       // If in quick mode, show success and reset
       if (quickMode) {
@@ -521,20 +552,6 @@ function App() {
                 )}
               </div>
 
-              {/* CARBON FLUX TOGGLE */}
-              {currentStep === 1 && (
-                <div className="carbon-flux-toggle" style={{ marginBottom: '32px', padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-                  <label className="carbon-flux-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.carbonFluxMeasurement || false}
-                      onChange={(e) => setValue('carbonFluxMeasurement', e.target.checked)}
-                      className="carbon-flux-checkbox"
-                    />
-                    <span className="carbon-flux-text">🌬️ Carbon flux measurement</span>
-                  </label>
-                </div>
-              )}
 
               {/* WIZARD STEPS */}
               <div style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -584,10 +601,13 @@ function App() {
                     <VegetationShort control={control} watch={watch} setValue={setValue} />
                   </div>
                 )}
-                {currentStep === 4 && <VegetationLong control={control} watch={watch} setValue={setValue} />}
-                {currentStep === 5 && <SoilProfile control={control} watch={watch} setValue={setValue} />}
-                {currentStep === 6 && <Morphology control={control} watch={watch} setValue={setValue} />}
-                {currentStep === 7 && (
+                {currentStep === 4 && (
+                  <>
+                    <SoilProfile control={control} watch={watch} setValue={setValue} />
+                    <Morphology control={control} watch={watch} setValue={setValue} />
+                  </>
+                )}
+                {currentStep === 5 && (
                   <div className="section">
                     <div className="section-header"><h2>Review & Save</h2></div>
                     <div className="section-content">

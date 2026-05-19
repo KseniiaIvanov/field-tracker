@@ -447,6 +447,21 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             />
           </div>
 
+          {/* ROW 6.5: AL Depth + Standing Water */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="field-group">
+              <label>AL Depth cm</label>
+              <input type="number" min="0" step="1" value={data.activeLayerDepth || ''} onChange={(e) => setValue('activeLayerDepth', parseFloat(e.target.value) || '')} placeholder="thaw depth" />
+            </div>
+            <div className="field-group">
+              <label>Standing Water</label>
+              <select value={data.standingWater ? 'yes' : 'no'} onChange={(e) => setValue('standingWater', e.target.value === 'yes')}>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+          </div>
+
           {/* ROW 7: Site Notes */}
           <div className="field-group">
             <label>Notes</label>
@@ -507,6 +522,14 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
           {/* SEPARATOR - Rarely changed fields */}
           <div style={{ borderTop: '2px dashed #ddd', paddingTop: '16px', marginTop: '8px' }}>
             <p style={{ fontSize: '11px', color: '#aaa', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Less frequent</p>
+
+            {/* Carbon Flux */}
+            <div className="field-group" style={{ marginBottom: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={data.carbonFluxMeasurement || false} onChange={(e) => setValue('carbonFluxMeasurement', e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                Carbon flux measurement
+              </label>
+            </div>
 
             {/* UTC + Shadow in 2 cols */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
