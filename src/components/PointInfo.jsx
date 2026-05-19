@@ -331,25 +331,12 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
 
       {isExpanded && (
         <div className="section-content">
-          <div className="field-group">
-            <label>Collector Name</label>
-            <input
-              type="text"
-              placeholder="Your name"
-              value={data.collector || ''}
-              onChange={(e) => setValue('collector', e.target.value)}
-            />
-          </div>
 
+          {/* ROW 1: Site Number */}
           <div className="field-group">
-            <label>Site Number</label>
-            <div className="point-controls" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <button
-                onClick={decrementSite}
-                style={{ padding: '10px 14px', fontSize: '18px', fontWeight: 'bold', minWidth: '40px', cursor: 'pointer', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px' }}
-              >
-                −
-              </button>
+            <label>Site #</label>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <button onClick={decrementSite} style={{ padding: '8px 12px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>−</button>
               <input
                 type="number"
                 value={data.siteNumber || 1}
@@ -359,585 +346,219 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
                   setFieldError('siteNumber', validation.valid ? null : validation.message)
                   setValue('siteNumber', parseInt(value) || 1)
                 }}
-                min="1"
-                max="999"
-                style={{
-                  borderColor: errors.siteNumber ? '#d32f2f' : '#ddd',
-                  width: '120px',
-                  textAlign: 'center',
-                  fontWeight: '600',
-                  padding: '10px 8px',
-                  fontSize: '16px',
-                  color: '#1a1a1a',
-                  backgroundColor: '#fff',
-                  border: '1px solid #ddd',
-                  borderRadius: '6px'
-                }}
+                min="1" max="999"
+                style={{ width: '80px', textAlign: 'center', fontWeight: '700', padding: '8px', fontSize: '16px', color: '#1a1a1a', backgroundColor: '#fff', border: errors.siteNumber ? '1px solid #d32f2f' : '1px solid #ddd', borderRadius: '6px' }}
               />
-              <button
-                onClick={incrementSite}
-                style={{ padding: '10px 14px', fontSize: '18px', fontWeight: 'bold', minWidth: '40px', cursor: 'pointer', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px' }}
-              >
-                +
-              </button>
+              <button onClick={incrementSite} style={{ padding: '8px 12px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>+</button>
             </div>
-            {errors.siteNumber && (
-              <small style={{ color: '#d32f2f', marginTop: '4px', display: 'block' }}>
-                ⚠️ {errors.siteNumber}
-              </small>
-            )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {/* ROW 2: Date + Time */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <div className="field-group">
               <label>Date</label>
-              <input
-                type="date"
-                value={data.date}
-                onChange={(e) => setValue('date', e.target.value)}
-              />
+              <input type="date" value={data.date} onChange={(e) => setValue('date', e.target.value)} />
             </div>
-
             <div className="field-group">
-              <label>Local Time</label>
-              <input
-                type="time"
-                value={data.localTime}
-                onChange={(e) => setValue('localTime', e.target.value)}
-              />
+              <label>Time</label>
+              <input type="time" value={data.localTime} onChange={(e) => setValue('localTime', e.target.value)} />
             </div>
           </div>
 
-          <div className="field-group">
-            <label>UTC Offset</label>
-            <select
-              value={data.utcOffset}
-              onChange={(e) => setValue('utcOffset', e.target.value)}
-            >
-              <option value="-12:00">UTC -12:00</option>
-              <option value="-11:00">UTC -11:00</option>
-              <option value="-10:00">UTC -10:00</option>
-              <option value="-09:00">UTC -09:00</option>
-              <option value="-08:00">UTC -08:00</option>
-              <option value="-07:00">UTC -07:00</option>
-              <option value="-06:00">UTC -06:00</option>
-              <option value="-05:00">UTC -05:00</option>
-              <option value="-04:00">UTC -04:00</option>
-              <option value="-03:00">UTC -03:00</option>
-              <option value="-02:00">UTC -02:00</option>
-              <option value="-01:00">UTC -01:00</option>
-              <option value="+00:00">UTC +00:00</option>
-              <option value="+01:00">UTC +01:00</option>
-              <option value="+02:00">UTC +02:00</option>
-              <option value="+03:00">UTC +03:00</option>
-              <option value="+04:00">UTC +04:00</option>
-              <option value="+05:00">UTC +05:00</option>
-              <option value="+06:00">UTC +06:00</option>
-              <option value="+07:00">UTC +07:00</option>
-              <option value="+08:00">UTC +08:00</option>
-              <option value="+09:00">UTC +09:00</option>
-              <option value="+10:00">UTC +10:00</option>
-              <option value="+11:00">UTC +11:00</option>
-              <option value="+12:00">UTC +12:00</option>
-            </select>
-          </div>
-
-          {/* Photo Upload Section */}
-          <div className="field-group">
-            <label>📸 Photo for Coordinates</label>
-            <div style={{
-              padding: '12px',
-              backgroundColor: '#f5f5f5',
-              borderRadius: '6px',
-              marginBottom: '12px'
-            }}>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                style={{
-                  padding: '8px',
-                  width: '100%',
-                  borderRadius: '4px',
-                  border: '1px solid #ddd',
-                  marginBottom: '8px'
-                }}
-              />
-              <small style={{ fontSize: '11px', color: '#666', display: 'block', lineHeight: '1.5' }}>
-                ⚠️ <strong>IMPORTANT:</strong> Photo must be taken strictly VERTICALLY (top to bottom) with geolocation enabled
-              </small>
-            </div>
-            {photoMessage && (
-              <small style={{
-                display: 'block',
-                marginTop: '8px',
-                padding: '8px',
-                backgroundColor: photoMessage.includes('✓') ? '#e8f5e9' : photoMessage.includes('⚠️') ? '#fff3e0' : '#ffebee',
-                borderRadius: '4px',
-                color: photoMessage.includes('✓') ? '#2e7d32' : photoMessage.includes('⚠️') ? '#e65100' : '#c62828'
-              }}>
-                {photoMessage}
-              </small>
-            )}
-            {uploadedPhoto && (
-              <div style={{
-                marginTop: '12px',
-                textAlign: 'center'
-              }}>
-                <img
-                  src={uploadedPhoto}
-                  alt="Uploaded site photo"
-                  style={{
-                    maxWidth: '200px',
-                    maxHeight: '300px',
-                    borderRadius: '6px',
-                    border: '1px solid #ddd'
-                  }}
-                />
-                <small style={{ display: 'block', marginTop: '8px', color: '#666' }}>
-                  Uploaded site photo
-                </small>
-              </div>
-            )}
-          </div>
-
-          <div className="shortcut-buttons">
+          {/* ROW 3: GPS buttons */}
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
               type="button"
               onClick={gpsAveraging ? stopGPSAveraging : startGPSAveraging}
-              disabled={false}
-              className="shortcut-button"
-              style={{
-                backgroundColor: gpsAveraging ? '#ff6b6b' : undefined,
-                opacity: 1,
-                cursor: 'pointer'
-              }}
+              style={{ flex: 1, padding: '10px', backgroundColor: gpsAveraging ? '#ff6b6b' : 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
             >
-              📍 {gpsAveraging ? 'Stop GPS' : 'GPS'}
+              📍 {gpsAveraging ? `Stop GPS (${Math.round((Date.now() - gpsAveraging.startTime) / 1000)}s)` : 'Get GPS'}
             </button>
             <button
               type="button"
               onClick={copyCoordinatesFromClipboard}
-              className="shortcut-button"
-              title="Paste lat,lon from clipboard"
+              style={{ padding: '10px 14px', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
             >
-              📋 Paste Coords
+              📋 Paste
             </button>
           </div>
 
           {gpsAveraging && (
-            <div style={{ marginBottom: '12px' }}>
-              <small style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '4px' }}>
-                {gpsAveraging.status}
-              </small>
-              <div style={{
-                width: '100%',
-                height: '6px',
-                backgroundColor: '#e0e0e0',
-                borderRadius: '3px',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${gpsAveraging.progress}%`,
-                  height: '100%',
-                  backgroundColor: '#4CAF50',
-                  transition: 'width 0.3s ease'
-                }} />
-              </div>
+            <div style={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ width: `${gpsAveraging.progress}%`, height: '100%', backgroundColor: '#4CAF50', transition: 'width 0.3s ease' }} />
             </div>
           )}
 
-          <div className="field-group">
-            <label>GPS Latitude</label>
-            <input
-              type="number"
-              step="0.000001"
-              value={data.latitude || ''}
-              onChange={(e) => {
-                const value = e.target.value
-                setValue('latitude', value)
-                // Validate both coordinates together
-                const validation = validateCoordinates(value, data.longitude)
-                setFieldError('coords', validation.valid ? null : validation.message)
-              }}
-              placeholder="Tap 'Get GPS' or enter manually"
-              style={{
-                borderColor: errors.coords ? '#d32f2f' : undefined
-              }}
-            />
-            <small style={{ fontSize: '12px', color: '#999' }}>Decimal degrees (e.g., 68.356)</small>
+          {/* ROW 4: Lat + Lon */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="field-group">
+              <label>Latitude</label>
+              <input type="number" step="0.000001" value={data.latitude || ''} placeholder="68.356..." onChange={(e) => { setValue('latitude', e.target.value); setFieldError('coords', validateCoordinates(e.target.value, data.longitude).valid ? null : validateCoordinates(e.target.value, data.longitude).message) }} style={{ borderColor: errors.coords ? '#d32f2f' : undefined }} />
+            </div>
+            <div className="field-group">
+              <label>Longitude</label>
+              <input type="number" step="0.000001" value={data.longitude || ''} placeholder="19.234..." onChange={(e) => { setValue('longitude', e.target.value); setFieldError('coords', validateCoordinates(data.latitude, e.target.value).valid ? null : validateCoordinates(data.latitude, e.target.value).message) }} style={{ borderColor: errors.coords ? '#d32f2f' : undefined }} />
+            </div>
           </div>
+          {errors.coords && <small style={{ color: '#d32f2f', fontSize: '11px' }}>⚠️ {errors.coords}</small>}
+          {data.accuracy && <small style={{ color: '#666', fontSize: '11px' }}>GPS accuracy: {data.accuracy}m</small>}
 
-          <div className="field-group">
-            <label>GPS Longitude</label>
-            <input
-              type="number"
-              step="0.000001"
-              value={data.longitude || ''}
-              onChange={(e) => {
-                const value = e.target.value
-                setValue('longitude', value)
-                // Validate both coordinates together
-                const validation = validateCoordinates(data.latitude, value)
-                setFieldError('coords', validation.valid ? null : validation.message)
-              }}
-              placeholder="Tap 'Get GPS' or enter manually"
-              style={{
-                borderColor: errors.coords ? '#d32f2f' : undefined
-              }}
-            />
-            <small style={{ fontSize: '12px', color: '#999' }}>Decimal degrees (e.g., 19.234)</small>
-            {errors.coords && (
-              <small style={{ color: '#d32f2f', marginTop: '4px', display: 'block' }}>
-                ⚠️ {errors.coords}
-              </small>
-            )}
-          </div>
-
-          <div className="field-group">
-            <label>GPS Accuracy (m)</label>
-            <input
-              type="number"
-              value={data.accuracy || ''}
-              onChange={(e) => setValue('accuracy', parseInt(e.target.value) || '')}
-              placeholder="Auto-detected"
-              disabled
-            />
-            <small style={{ fontSize: '12px', color: '#999' }}>Meters - read only</small>
-          </div>
-
-          <div className="field-group">
-            <label>GPS Location</label>
-            <select
-              value={data.gpsLocationNote || 'not_needed'}
-              onChange={(e) => setValue('gpsLocationNote', e.target.value)}
-            >
-              <option value="not_needed">✓ No correction (phone on measurement point)</option>
-              <option value="visual_correction_needed">⚠️ Visual correction needed (phone on different surface)</option>
-            </select>
-            <small style={{ fontSize: '12px', color: '#999' }}>Was phone on same surface as measurements?</small>
-          </div>
-
-          <div className="field-group">
-            <label>GPS Notes</label>
-            <input
-              type="text"
-              placeholder="e.g., signal weak, tree cover, distance from point..."
-              value={data.gpsNotes || ''}
-              onChange={(e) => setValue('gpsNotes', e.target.value)}
-            />
-            <small style={{ fontSize: '12px', color: '#999' }}>Add any notes about GPS accuracy or location</small>
-          </div>
-
-          <div className="field-group">
-            <label>📝 Site Notes (Quick)</label>
-            <textarea
-              value={data.notes || ''}
-              onChange={(e) => setValue('notes', e.target.value)}
-              placeholder="Unusual features, observations, field conditions..."
-              rows="3"
-              style={{
-                backgroundColor: 'var(--bg-primary)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                fontFamily: 'inherit',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}
-            />
-            <small style={{ fontSize: '12px', color: '#999' }}>Add immediately - don't wait until end of form</small>
-          </div>
-
-          {/* VOICE NOTES */}
-          <div className="field-group">
-            <label>🎤 Voice Notes</label>
-            <button
-              type="button"
-              onClick={isRecording ? stopRecording : startRecording}
-              style={{
-                width: '100%',
-                padding: '12px',
-                backgroundColor: isRecording ? '#d32f2f' : 'var(--primary-color)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                marginBottom: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              {isRecording ? (
-                <>
-                  <span style={{ fontSize: '18px' }}>⏹</span>
-                  <span>STOP ({recordingTime}s)</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: '18px' }}>🎤</span>
-                  <span>RECORD NOTE</span>
-                </>
-              )}
-            </button>
-
-            {voiceNotes.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {voiceNotes.map((note) => (
-                  <div
-                    key={note.id}
-                    style={{
-                      display: 'flex',
-                      gap: '8px',
-                      alignItems: 'center',
-                      padding: '10px 12px',
-                      backgroundColor: 'var(--bg-secondary)',
-                      borderRadius: '6px'
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => playVoiceNote(note.data)}
-                      style={{
-                        padding: '6px 10px',
-                        backgroundColor: 'var(--primary-color)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        minWidth: '50px'
-                      }}
-                    >
-                      ▶ {note.duration}s
-                    </button>
-                    <span style={{ fontSize: '12px', color: '#999', flex: 1 }}>
-                      {note.timestamp}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => deleteVoiceNote(note.id)}
-                      style={{
-                        padding: '4px 8px',
-                        backgroundColor: '#d32f2f',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      ✕
-                    </button>
+          {/* ROW 5: Landscape + Organic matter */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="field-group">
+              <label>Landscape</label>
+              <div className="autocomplete-container">
+                <input
+                  type="text"
+                  placeholder="RTS, Polygon..."
+                  value={data.landscape}
+                  onChange={(e) => {
+                    setValue('landscape', e.target.value)
+                    setLandscapeSuggestions(e.target.value.length > 0 ? allLandscapes.filter(l => l.toLowerCase().includes(e.target.value.toLowerCase())) : [])
+                  }}
+                />
+                {landscapeSuggestions.length > 0 && (
+                  <div className="autocomplete-suggestions">
+                    {landscapeSuggestions.map((s) => (
+                      <div key={s} className="suggestion-item" onClick={() => { setValue('landscape', s); setLandscapeSuggestions([]) }}>{s}</div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
-
-          <div className="field-group">
-            <label>Shadow Experiment Netting</label>
-            <select
-              value={data.shadowExperimentNetting || '0'}
-              onChange={(e) => setValue('shadowExperimentNetting', e.target.value)}
-            >
-              <option value="0">0 layers</option>
-              <option value="1">1 layer</option>
-              <option value="2">2 layers</option>
-              <option value="3">3 layers</option>
-              <option value="4">4 layers</option>
-              <option value="5">5 layers</option>
-              <option value="6">6+ layers</option>
-            </select>
-          </div>
-
-          <div className="field-group">
-            <label>Landscape Type</label>
-            <div className="autocomplete-container">
-              <input
-                type="text"
-                placeholder="RTS, Polygon, Shore..."
-                value={data.landscape}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setValue('landscape', value)
-
-                  // Filter suggestions
-                  if (value.length > 0) {
-                    const filtered = allLandscapes.filter(l =>
-                      l.toLowerCase().includes(value.toLowerCase())
-                    )
-                    setLandscapeSuggestions(filtered)
-                  } else {
-                    setLandscapeSuggestions([])
-                  }
-                }}
-              />
-              {landscapeSuggestions.length > 0 && (
-                <div className="autocomplete-suggestions">
-                  {landscapeSuggestions.map((suggestion) => (
-                    <div
-                      key={suggestion}
-                      className="suggestion-item"
-                      onClick={() => {
-                        setValue('landscape', suggestion)
-                        setLandscapeSuggestions([])
-                        // Add to history if new
-                        if (!allLandscapes.includes(suggestion)) {
-                          setAllLandscapes([...allLandscapes, suggestion])
-                        }
-                      }}
-                    >
-                      {suggestion}
-                    </div>
-                  ))}
-                </div>
-              )}
+            </div>
+            <div className="field-group">
+              <label>Organic Matter</label>
+              <select value={data.organicMatterType || ''} onChange={(e) => setValue('organicMatterType', e.target.value)}>
+                <option value="">Select...</option>
+                {ORGANIC_MATTER_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+              </select>
             </div>
           </div>
 
+          {/* ROW 6: Disturbances */}
           <div className="field-group">
-            <label>Surface Disturbances</label>
+            <label>Disturbances</label>
             <input
               type="text"
-              placeholder="e.g., thermokarst, erosion, trampling, slumping..."
+              placeholder="thermokarst, erosion, trampling..."
               value={data.disturbance || ''}
               onChange={(e) => setValue('disturbance', e.target.value)}
               maxLength="60"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                fontSize: '14px',
-                color: '#1a1a1a',
-                backgroundColor: '#fff',
-                border: '1px solid #ddd',
-                borderRadius: '6px'
-              }}
             />
-            <small style={{ fontSize: '12px', color: '#999', marginTop: '4px', display: 'block' }}>e.g., "none", "thermokarst", "erosion", "trampling", "solifluction"</small>
           </div>
 
+          {/* ROW 7: Site Notes */}
           <div className="field-group">
-            <label>Dominant Organic Matter Type</label>
-            <select
-              value={data.organicMatterType || ''}
-              onChange={(e) => setValue('organicMatterType', e.target.value)}
-            >
-              <option value="">Select type...</option>
-              {ORGANIC_MATTER_TYPES.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
-            <small style={{ fontSize: '12px', color: '#999' }}>Controls decomposition rates and gas flux</small>
+            <label>Notes</label>
+            <textarea
+              value={data.notes || ''}
+              onChange={(e) => setValue('notes', e.target.value)}
+              placeholder="Observations, conditions, features..."
+              rows="2"
+              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+            />
           </div>
 
-          <div className="field-row-2">
-            <div className="field-group">
-              <label>Soil Moisture (%)</label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="100"
-                value={data.soilMoisture || ''}
-                onChange={(e) => setValue('soilMoisture', e.target.value ? parseFloat(e.target.value) : '')}
-              />
-            </div>
-
-            <div className="field-group">
-              <label>Soil Temp (°C)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={data.soilTemperature || ''}
-                onChange={(e) => setValue('soilTemperature', e.target.value ? parseFloat(e.target.value) : '')}
-              />
-            </div>
-          </div>
-
-          {/* SITE PHOTO - REQUIRED */}
-          <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#fff3e0', borderRadius: '8px', border: '2px solid #ff9800' }}>
-            <div style={{ marginBottom: '12px', fontWeight: '700', color: '#e65100', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '18px' }}>⚠️</span>
-              <span>Site Photo (REQUIRED)</span>
-            </div>
-            <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#e65100', lineHeight: '1.5' }}>
-              Every site must have at least one photo. This helps document the location and conditions.
-            </p>
-            <div style={{
-              padding: '12px',
-              backgroundColor: '#fff',
-              borderRadius: '6px',
-              marginBottom: '12px',
-              border: '2px dashed #ff9800'
-            }}>
-              <label style={{ display: 'inline-block', padding: '12px 16px', backgroundColor: '#ff9800', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
-                📷 Add Site Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      const reader = new FileReader()
-                      reader.onloadend = () => {
-                        const newPhoto = {
-                          id: Date.now(),
-                          originalData: reader.result,
-                          previewData: reader.result,
-                          name: file.name,
-                          type: file.type
-                        }
-                        const currentPhotos = data.entryPhotos || []
-                        setValue('entryPhotos', [...currentPhotos, newPhoto])
-                      }
-                      reader.readAsDataURL(file)
-                    }
-                    e.target.value = ''
-                  }}
-                  style={{ display: 'none' }}
-                />
+          {/* ROW 8: Site Photo (compact) */}
+          <div className="field-group">
+            <label>📷 Site Photo</label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <label style={{ display: 'inline-block', padding: '8px 14px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
+                + Add
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onloadend = () => setValue('entryPhotos', [...(data.entryPhotos || []), { id: Date.now(), originalData: reader.result, previewData: reader.result, name: file.name, type: file.type }])
+                    reader.readAsDataURL(file)
+                  }
+                  e.target.value = ''
+                }} style={{ display: 'none' }} />
               </label>
+              {(data.entryPhotos || []).map((photo, idx) => (
+                <div key={photo.id} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', width: '60px', height: '60px', flexShrink: 0 }}>
+                  <img src={photo.previewData || photo.originalData} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => setValue('entryPhotos', (data.entryPhotos || []).filter(p => p.id !== photo.id))} style={{ position: 'absolute', top: '1px', right: '1px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: '18px', textAlign: 'center' }}>✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ROW 9: Voice Notes (compact) */}
+          <div className="field-group">
+            <label>🎤 Voice Notes</label>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={isRecording ? stopRecording : startRecording}
+                style={{ padding: '8px 16px', backgroundColor: isRecording ? '#d32f2f' : '#f0f0f0', color: isRecording ? 'white' : '#1a1a1a', border: '1px solid #ddd', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
+              >
+                {isRecording ? `⏹ Stop (${recordingTime}s)` : '🎤 Record'}
+              </button>
+              {voiceNotes.map((note) => (
+                <div key={note.id} style={{ display: 'flex', gap: '4px', alignItems: 'center', padding: '4px 8px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
+                  <button type="button" onClick={() => playVoiceNote(note.data)} style={{ padding: '4px 8px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>▶ {note.duration}s</button>
+                  <button type="button" onClick={() => deleteVoiceNote(note.id)} style={{ padding: '2px 6px', backgroundColor: 'transparent', color: '#999', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SEPARATOR - Rarely changed fields */}
+          <div style={{ borderTop: '2px dashed #ddd', paddingTop: '16px', marginTop: '8px' }}>
+            <p style={{ fontSize: '11px', color: '#aaa', margin: '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Less frequent</p>
+
+            {/* UTC + Shadow in 2 cols */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+              <div className="field-group">
+                <label>UTC Offset</label>
+                <select value={data.utcOffset} onChange={(e) => setValue('utcOffset', e.target.value)} style={{ fontSize: '12px' }}>
+                  {['-12:00','-11:00','-10:00','-09:00','-08:00','-07:00','-06:00','-05:00','-04:00','-03:00','-02:00','-01:00','+00:00','+01:00','+02:00','+03:00','+04:00','+05:00','+06:00','+07:00','+08:00','+09:00','+10:00','+11:00','+12:00'].map(o => <option key={o} value={o}>UTC {o}</option>)}
+                </select>
+              </div>
+              <div className="field-group">
+                <label>Shadow Netting</label>
+                <select value={data.shadowExperimentNetting || '0'} onChange={(e) => setValue('shadowExperimentNetting', e.target.value)} style={{ fontSize: '12px' }}>
+                  {['0','1','2','3','4','5','6'].map(n => <option key={n} value={n}>{n === '6' ? '6+ layers' : `${n} layer${n === '1' ? '' : 's'}`}</option>)}
+                </select>
+              </div>
             </div>
 
-            {(data.entryPhotos && data.entryPhotos.length > 0) && (
-              <div>
-                <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: '600', color: '#2e7d32' }}>
-                  ✅ {data.entryPhotos.length} photo{data.entryPhotos.length > 1 ? 's' : ''} added
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px' }}>
-                  {data.entryPhotos.map((photo, idx) => (
-                    <div key={photo.id} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', backgroundColor: '#f0f0f0' }}>
-                      <img
-                        src={photo.previewData || photo.originalData}
-                        alt={`Site photo ${idx + 1}`}
-                        style={{ width: '100%', height: '80px', objectFit: 'cover' }}
-                      />
-                      <button
-                        onClick={() => {
-                          setValue('entryPhotos', (data.entryPhotos || []).filter(p => p.id !== photo.id))
-                        }}
-                        style={{ position: 'absolute', top: '2px', right: '2px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', padding: 0 }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
+            {/* Collector + Soil in 2 cols */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+              <div className="field-group">
+                <label>Collector</label>
+                <input type="text" placeholder="Your name" value={data.collector || ''} onChange={(e) => setValue('collector', e.target.value)} />
+              </div>
+              <div className="field-group">
+                <label>Soil Moisture %</label>
+                <input type="number" step="0.1" min="0" max="100" value={data.soilMoisture || ''} onChange={(e) => setValue('soilMoisture', e.target.value ? parseFloat(e.target.value) : '')} />
+              </div>
+            </div>
+
+            {/* Soil Temp + Photo for coords */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+              <div className="field-group">
+                <label>Soil Temp °C</label>
+                <input type="number" step="0.1" value={data.soilTemperature || ''} onChange={(e) => setValue('soilTemperature', e.target.value ? parseFloat(e.target.value) : '')} />
+              </div>
+              <div className="field-group">
+                <label>📸 Coord Photo</label>
+                <div>
+                  <label style={{ display: 'inline-block', padding: '8px 12px', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                    Upload
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                  </label>
+                  {photoMessage && <small style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: photoMessage.includes('✓') ? '#2e7d32' : '#c62828' }}>{photoMessage}</small>}
                 </div>
               </div>
-            )}
+            </div>
 
-            {(!data.entryPhotos || data.entryPhotos.length === 0) && (
-              <p style={{ margin: 0, fontSize: '12px', color: '#d32f2f', fontWeight: '600' }}>
-                ❌ No photos added yet - you must add at least one photo before saving
-              </p>
+            {uploadedPhoto && (
+              <img src={uploadedPhoto} alt="Coord photo" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ddd' }} />
             )}
           </div>
+
         </div>
       )}
     </div>
