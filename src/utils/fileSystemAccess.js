@@ -7,6 +7,69 @@ export function isFileSystemAccessAvailable() {
   return typeof window !== 'undefined' && 'showDirectoryPicker' in window
 }
 
+// Try to restore handle from IndexedDB
+export async function restoreRootDirectory() {
+  if (!isFileSystemAccessAvailable()) return null
+
+  try {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('field-diary-storage', 1)
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+
+    return new Promise((resolve) => {
+      const transaction = db.transaction('directory-handle', 'readonly')
+      const request = transaction.objectStore('directory-handle').get('root')
+      request.onsuccess = async () => {
+        if (request.result?.handle) {
+          try {
+            // Verify permission still exists
+            const permission = await request.result.handle.queryPermission({ mode: 'readwrite' })
+            if (permission === 'granted') {
+              rootDirectoryHandle = request.result.handle
+              resolve(rootDirectoryHandle)
+            } else {
+              resolve(null)
+            }
+          } catch {
+            resolve(null)
+          }
+        } else {
+          resolve(null)
+        }
+      }
+    })
+  } catch {
+    return null
+  }
+}
+
+// Save handle to IndexedDB for persistence
+async function saveHandleToDb(handle) {
+  try {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('field-diary-storage', 1)
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result
+        if (!db.objectStoreNames.contains('directory-handle')) {
+          db.createObjectStore('directory-handle')
+        }
+      }
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+
+    return new Promise((resolve) => {
+      const transaction = db.transaction('directory-handle', 'readwrite')
+      transaction.objectStore('directory-handle').put({ handle }, 'root')
+      transaction.oncomplete = () => resolve(true)
+    })
+  } catch (error) {
+    console.warn('Could not save handle to IndexedDB:', error)
+  }
+}
+
 // Request access to a directory (user selects folder)
 export async function requestRootDirectory() {
   try {
@@ -15,6 +78,8 @@ export async function requestRootDirectory() {
       id: 'field-diary-storage',
       startIn: 'documents'
     })
+    // Save handle for persistence
+    await saveHandleToDb(rootDirectoryHandle)
     return rootDirectoryHandle
   } catch (error) {
     if (error.name === 'AbortError') {

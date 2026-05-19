@@ -5,7 +5,7 @@ import { useAsyncStorage } from './hooks/useAsyncStorage'
 import { useNotificationContext } from './context/NotificationContext'
 import { validateCompleteEntry } from './utils/validators'
 import { processPhoto } from './utils/photoMetadata'
-import { isFileSystemAccessAvailable, requestRootDirectory, getRootDirectory, setRootDirectory, saveSiteToDevice } from './utils/fileSystemAccess'
+import { isFileSystemAccessAvailable, requestRootDirectory, getRootDirectory, setRootDirectory, saveSiteToDevice, restoreRootDirectory } from './utils/fileSystemAccess'
 import ErrorBoundary from './components/ErrorBoundary'
 import QuickEntry from './components/QuickEntry'
 import PointInfo from './components/PointInfo'
@@ -160,9 +160,17 @@ function App() {
     if (isFileSystemAccessAvailable()) {
       const restoreStorageFolder = async () => {
         try {
-          const stored = localStorage.getItem('field-diary-storage-path')
-          if (stored) {
-            setDeviceStoragePath(stored)
+          // Try to restore handle from IndexedDB
+          const handle = await restoreRootDirectory()
+          if (handle) {
+            setDeviceStoragePath('📁 Storage folder restored')
+            setRootDirectory(handle)
+            console.log('✅ Storage folder restored from previous session')
+          } else {
+            const stored = localStorage.getItem('field-diary-storage-path')
+            if (stored) {
+              setDeviceStoragePath(stored)
+            }
           }
           setStorageReady(true)
         } catch (error) {
@@ -533,17 +541,46 @@ function App() {
                 {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} gpsAveraging={gpsAveraging} setGpsAveraging={setGpsAveraging} />}
                 {currentStep === 2 && <Weather control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} />}
                 {currentStep === 3 && (
-                  <div className="section">
-                    <button className="section-header" style={{ width: '100%' }}><h2>Vegetation (Short)</h2></button>
-                    <div className="section-content">
-                      <div className="field-group">
-                        <label>Environment</label>
-                        <select value={formData.terrestrialAquatic} onChange={(e) => setValue('terrestrialAquatic', e.target.value)}>
-                          <option value="terrestrial">Terrestrial</option>
-                          <option value="aquatic">Aquatic</option>
-                        </select>
+                  <div>
+                    <div className="section">
+                      <button className="section-header" style={{ width: '100%' }}><h2>Vegetation (Short)</h2></button>
+                      <div className="section-content">
+                        <div className="field-group">
+                          <label>Environment</label>
+                          <select value={formData.terrestrialAquatic} onChange={(e) => setValue('terrestrialAquatic', e.target.value)}>
+                            <option value="terrestrial">Terrestrial</option>
+                            <option value="aquatic">Aquatic</option>
+                          </select>
+                        </div>
+
+                        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+                          <h3 style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>Coverage by Type</h3>
+                          <div style={{ display: 'grid', gap: '8px' }}>
+                            {Object.keys(formData.vegetationShort || {}).map((category) => (
+                              <div key={category} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '8px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
+                                <div style={{ flex: 1, fontSize: '13px', fontWeight: '500' }}>
+                                  {category}
+                                  {formData.vegetationShort[category]?.height && (
+                                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                                      ({formData.vegetationShort[category].height}cm)
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary-color)', minWidth: '60px', textAlign: 'right' }}>
+                                  {formData.vegetationShort[category]?.coverage === 0 ? 'Absent' : formData.vegetationShort[category]?.coverage === 1 ? '<50%' : '>50%'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {formData.vegetationShortNotes && (
+                            <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-secondary)', padding: '8px', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
+                              <strong>Notes:</strong> {formData.vegetationShortNotes}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
+
                     <VegetationShort control={control} watch={watch} setValue={setValue} />
                   </div>
                 )}
