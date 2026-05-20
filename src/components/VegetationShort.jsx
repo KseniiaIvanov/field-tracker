@@ -69,125 +69,91 @@ export default function VegetationShort({ control, watch, setValue }) {
 
       {isExpanded && (
         <div className="section-content">
-          {/* Display all categories (standard + custom) */}
+          <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', display: 'flex', gap: '8px' }}>
+            <span style={{ flex: 1 }}></span>
+            <span style={{ width: '90px', textAlign: 'center' }}>Coverage</span>
+            <span style={{ width: '55px', textAlign: 'center' }}>cm</span>
+            <span style={{ width: '20px' }}></span>
+          </div>
+
           {Object.keys(shortVegData).map((category) => (
-            <div key={category} className="vegetation-item">
-              <div className="vegetation-category-header">
-                <div className="vegetation-category-name">{category}</div>
-                {!categories.includes(category) && (
-                  <button
-                    className="btn-delete-small"
-                    onClick={() => {
-                      const updated = { ...shortVegData }
-                      delete updated[category]
-                      setValue('vegetationShort', updated)
-                    }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ width: '70px', fontWeight: 600, fontSize: '12px', flexShrink: 0 }}>Coverage</label>
-                <select
-                  value={shortVegData[category]?.coverage || 0}
-                  onChange={(e) => updateVegetation(category, 'coverage', parseInt(e.target.value))}
-                  style={{ flex: 1, maxWidth: '200px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px' }}
-                >
-                  {coverageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ width: '70px', fontWeight: 600, fontSize: '12px', flexShrink: 0 }}>Height</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={shortVegData[category]?.height || ''}
-                  onChange={(e) => updateVegetation(category, 'height', parseFloat(e.target.value) || '')}
-                  placeholder="Optional"
-                  style={{ flex: 1, maxWidth: '100px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontSize: '13px' }}
-                />
-                <span style={{ fontWeight: 600, fontSize: '12px', flexShrink: 0 }}>cm</span>
-              </div>
-
+            <div key={category} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '5px', padding: '5px 8px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
+              <div style={{ flex: 1, fontSize: '13px', fontWeight: '500' }}>{category}</div>
+              <select
+                value={shortVegData[category]?.coverage ?? 0}
+                onChange={(e) => updateVegetation(category, 'coverage', parseInt(e.target.value))}
+                style={{ width: '90px', padding: '4px 4px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+              >
+                <option value="0">0 Absent</option>
+                <option value="1">1 Present</option>
+                <option value="2">2 Dominant</option>
+              </select>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={shortVegData[category]?.height || ''}
+                onChange={(e) => updateVegetation(category, 'height', parseFloat(e.target.value) || '')}
+                placeholder="—"
+                style={{ width: '55px', padding: '4px 6px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+              />
+              {!categories.includes(category) && (
+                <button
+                  onClick={() => { const updated = { ...shortVegData }; delete updated[category]; setValue('vegetationShort', updated) }}
+                  style={{ padding: '2px 5px', color: '#aaa', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', flexShrink: 0 }}
+                >✕</button>
+              )}
             </div>
           ))}
 
-          <div className="custom-items-section">
-            <h3>Add Custom Category</h3>
-            <div className="form-row">
-              <input
-                type="text"
-                placeholder="Enter custom vegetation type"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}
-              />
-              <button
-                className="btn-add"
-                onClick={() => {
-                  if (customInput.trim()) {
-                    const customName = customInput.trim()
-                    const updated = { ...shortVegData }
-                    updated[customName] = { coverage: 0, height: '' }
-                    setValue('vegetationShort', updated)
-                    setCustomInput('')
-                  }
-                }}
-              >
-                + Add
-              </button>
-            </div>
-          </div>
-
-          <div className="field-group" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
-            <label>General Notes (all groups)</label>
-            <textarea
-              value={data.vegetationShortNotes || ''}
-              onChange={(e) => setValue('vegetationShortNotes', e.target.value)}
-              placeholder="Optional notes about vegetation coverage, distribution, or observations..."
-              rows="3"
-              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%' }}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Add custom type..."
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && customInput.trim()) {
+                  const updated = { ...shortVegData }
+                  updated[customInput.trim()] = { coverage: 0, height: '' }
+                  setValue('vegetationShort', updated)
+                  setCustomInput('')
+                }
+              }}
+              style={{ flex: 1, padding: '6px 10px', fontSize: '13px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
             />
+            <button
+              onClick={() => {
+                if (customInput.trim()) {
+                  const updated = { ...shortVegData }
+                  updated[customInput.trim()] = { coverage: 0, height: '' }
+                  setValue('vegetationShort', updated)
+                  setCustomInput('')
+                }
+              }}
+              style={{ padding: '6px 14px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '13px', whiteSpace: 'nowrap' }}
+            >+ Add</button>
           </div>
 
-          <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border-color)' }}>
-            <h3 style={{ marginBottom: '12px' }}>Vegetation Photos</h3>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'inline-block', padding: '10px 16px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
-                📷 Add Photos
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  style={{ display: 'none' }}
-                />
-              </label>
-            </div>
+          <textarea
+            value={data.vegetationShortNotes || ''}
+            onChange={(e) => setValue('vegetationShortNotes', e.target.value)}
+            placeholder="Notes..."
+            rows="2"
+            style={{ marginTop: '12px', width: '100%', padding: '8px 10px', fontSize: '13px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+          />
 
-            {vegPhotos.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
-                {vegPhotos.map((photo) => (
-                  <div key={photo.id} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--bg-secondary)' }}>
-                    <img src={photo.data} alt={photo.name} style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
-                    <button
-                      onClick={() => removePhoto(photo.id)}
-                      style={{ position: 'absolute', top: '4px', right: '4px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+          <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'inline-block', padding: '6px 14px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
+              📷 Photos
+              <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+            </label>
+            {vegPhotos.map((photo) => (
+              <div key={photo.id} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', width: '56px', height: '56px', flexShrink: 0 }}>
+                <img src={photo.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button onClick={() => removePhoto(photo.id)} style={{ position: 'absolute', top: '1px', right: '1px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', fontSize: '11px', padding: 0, lineHeight: '18px', textAlign: 'center' }}>✕</button>
               </div>
-            )}
+            ))}
           </div>
         </div>
       )}
