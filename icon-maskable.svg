@@ -4,23 +4,16 @@
 
   <!-- Content scaled to 78% safe zone -->
   <g transform="translate(56 56) scale(0.78)">
-    <!-- Ground -->
-    <rect x="0" y="310" width="512" height="202" fill="#1A3828"/>
-    <!-- Ground surface -->
-    <rect x="0" y="298" width="512" height="18" fill="#2E5E3C"/>
-
-    <!-- Probe shaft -->
-    <rect x="232" y="148" width="48" height="162" rx="10" fill="#F5F1E8"/>
-
-    <!-- Probe tip -->
-    <polygon points="256,380 235,316 277,316" fill="#F5F1E8"/>
-
-    <!-- Sensor head -->
-    <circle cx="256" cy="128" r="92" fill="#E07A5F"/>
-
-    <!-- Reading lines -->
-    <rect x="220" y="98" width="72" height="10" rx="5" fill="#F5F1E8"/>
-    <rect x="226" y="118" width="60" height="8" rx="4" fill="#F5F1E8" opacity="0.75"/>
-    <rect x="232" y="136" width="48" height="7" rx="3" fill="#F5F1E8" opacity="0.5"/>
+    <!-- Outermost topo band -->
+    <ellipse cx="256" cy="340" rx="230" ry="110" fill="#1B3D52"/>
+    <!-- Middle topo band -->
+    <ellipse cx="248" cy="316" rx="168" ry="80" fill="#2C6068"/>
+    <!-- Inner topo band (summit) -->
+    <ellipse cx="244" cy="296" rx="104" ry="52" fill="#3D8070"/>
+    <!-- Sample point marker -->
+    <circle cx="244" cy="180" r="54" fill="#F5F1E8"/>
+    <circle cx="244" cy="180" r="34" fill="#E07A5F"/>
+    <!-- Probe line -->
+    <rect x="236" y="230" width="16" height="70" rx="6" fill="#F5F1E8"/>
   </g>
 </svg>
