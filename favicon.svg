@@ -1,129 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="92" fill="#0F2A3A"/>
 
-  <!-- ===== TOPO CONTOURS (landscape) — summit shifted left where the chamber sits ===== -->
-  <!-- Outermost contour with a side lobe -->
-  <path d="
-    M 38 348
-    C 22 290, 70 232, 142 222
-    C 184 218, 214 232, 248 226
-    C 294 218, 348 220, 398 244
-    C 446 268, 478 312, 478 360
-    C 478 408, 450 442, 410 466
-    C 366 488, 312 490, 256 484
-    C 196 478, 138 478, 92 458
-    C 54 440, 32 396, 38 348 Z" fill="#1B3D52"/>
+  <!-- Ground -->
+  <rect x="0" y="310" width="512" height="202" fill="#1A3828"/>
+  <!-- Ground surface -->
+  <rect x="0" y="298" width="512" height="18" fill="#2E5E3C"/>
 
-  <!-- Band 2 -->
-  <path d="
-    M 82 348
-    C 70 296, 124 252, 192 246
-    C 232 244, 256 254, 290 246
-    C 328 238, 372 244, 408 268
-    C 442 292, 458 328, 452 368
-    C 448 406, 418 438, 380 458
-    C 338 476, 292 472, 252 470
-    C 202 468, 158 466, 122 450
-    C 88 432, 76 392, 82 348 Z" fill="#2C5868"/>
+  <!-- Probe shaft -->
+  <rect x="232" y="148" width="48" height="162" rx="10" fill="#F5F1E8"/>
 
-  <!-- Band 3 -->
-  <path d="
-    M 116 348
-    C 110 304, 156 274, 216 270
-    C 252 268, 274 278, 302 274
-    C 338 268, 374 282, 392 308
-    C 408 334, 410 360, 400 386
-    C 388 410, 360 426, 330 436
-    C 298 446, 264 442, 234 442
-    C 196 442, 162 432, 146 410
-    C 130 390, 118 372, 116 348 Z" fill="#3D6F72"/>
+  <!-- Probe tip (goes into ground) -->
+  <polygon points="256,380 235,316 277,316" fill="#F5F1E8"/>
 
-  <!-- Band 4 — summit, chamber sits on this -->
-  <path d="
-    M 140 350
-    C 134 318, 162 296, 200 296
-    C 230 294, 252 304, 280 300
-    C 312 296, 340 308, 350 332
-    C 360 354, 350 380, 322 392
-    C 290 406, 254 408, 226 404
-    C 200 402, 178 396, 162 388
-    C 150 380, 140 366, 140 350 Z" fill="#4F8062"/>
+  <!-- Sensor head (large bold circle) -->
+  <circle cx="256" cy="128" r="92" fill="#E07A5F"/>
 
-  <!-- ===== UPPER-LEFT SECONDARY MINI-HILL ===== -->
-  <path d="
-    M 56 96
-    C 46 70, 86 50, 122 56
-    C 154 62, 172 84, 164 110
-    C 156 132, 124 138, 96 132
-    C 76 126, 62 114, 56 96 Z" fill="#1B3D52"/>
-  <path d="
-    M 76 96
-    C 72 82, 102 70, 124 76
-    C 144 80, 154 94, 146 108
-    C 138 120, 116 124, 100 118
-    C 88 112, 78 106, 76 96 Z" fill="#2C5868"/>
-  <ellipse cx="116" cy="98" rx="11" ry="6" fill="#3D6F72"/>
-
-  <!-- Meandering stream across upper area -->
-  <path d="M 0 56 C 60 76, 130 36, 210 66 C 290 96, 360 56, 430 86 C 466 100, 494 92, 512 106"
-        fill="none" stroke="#7BB0C8" stroke-width="3" opacity="0.55" stroke-linecap="round"/>
-
-  <!-- Subtle isohypse highlight strokes -->
-  <g fill="none" stroke="#F5F1E8" stroke-width="1.6" opacity="0.25" stroke-linejoin="round">
-    <path d="M 82 348 C 70 296, 124 252, 192 246 C 232 244, 256 254, 290 246 C 328 238, 372 244, 408 268 C 442 292, 458 328, 452 368 C 448 406, 418 438, 380 458 C 338 476, 292 472, 252 470 C 202 468, 158 466, 122 450 C 88 432, 76 392, 82 348 Z"/>
-    <path d="M 116 348 C 110 304, 156 274, 216 270 C 252 268, 274 278, 302 274 C 338 268, 374 282, 392 308 C 408 334, 410 360, 400 386 C 388 410, 360 426, 330 436 C 298 446, 264 442, 234 442 C 196 442, 162 432, 146 410 C 130 390, 118 372, 116 348 Z"/>
-    <path d="M 140 350 C 134 318, 162 296, 200 296 C 230 294, 252 304, 280 300 C 312 296, 340 308, 350 332 C 360 354, 350 380, 322 392 C 290 406, 254 408, 226 404 C 200 402, 178 396, 162 388 C 150 380, 140 366, 140 350 Z"/>
-  </g>
-
-  <!-- Sample points (cream) scattered across slopes -->
-  <circle cx="60"  cy="410" r="7" fill="#F5F1E8" opacity="0.8"/>
-  <circle cx="92"  cy="470" r="7" fill="#F5F1E8" opacity="0.8"/>
-  <circle cx="430" cy="430" r="7" fill="#F5F1E8" opacity="0.8"/>
-  <circle cx="470" cy="370" r="7" fill="#F5F1E8" opacity="0.8"/>
-  <circle cx="200" cy="490" r="6" fill="#F5F1E8" opacity="0.7"/>
-  <circle cx="368" cy="478" r="6" fill="#F5F1E8" opacity="0.7"/>
-  <circle cx="300" cy="172" r="6" fill="#F5F1E8" opacity="0.7"/>
-  <circle cx="400" cy="195" r="6" fill="#F5F1E8" opacity="0.7"/>
-
-  <!-- ===== FLUX CHAMBER (bigger, shifted left) ===== -->
-  <!-- Chamber base / collar pressed into the soil -->
-  <rect x="138" y="310" width="148" height="16" rx="3" fill="#2A3D2E"/>
-
-  <!-- Chamber walls (transparent glass panel) -->
-  <rect x="146" y="148" width="132" height="172" rx="9"
-        fill="#F5F1E8" opacity="0.13"
-        stroke="#F5F1E8" stroke-width="5"/>
-
-  <!-- Chamber top cap highlight -->
-  <rect x="146" y="148" width="132" height="13" rx="6" fill="#F5F1E8" opacity="0.35"/>
-
-  <!-- Inner glass reflection line -->
-  <line x1="162" y1="166" x2="162" y2="308" stroke="#F5F1E8" stroke-width="2.5" opacity="0.4"/>
-
-  <!-- Gas molecules inside the chamber -->
-  <circle cx="174" cy="194" r="11" fill="#E07A5F"/>
-  <circle cx="230" cy="180" r="8"  fill="#E07A5F"/>
-  <circle cx="206" cy="232" r="13" fill="#E07A5F"/>
-  <circle cx="248" cy="218" r="7"  fill="#E07A5F"/>
-  <circle cx="184" cy="260" r="9"  fill="#E07A5F"/>
-  <circle cx="240" cy="270" r="11" fill="#E07A5F"/>
-  <circle cx="206" cy="290" r="6"  fill="#E07A5F"/>
-
-  <!-- Upward flux arrows -->
-  <g fill="#E07A5F" opacity="0.75">
-    <polygon points="172,310 178,296 184,310 181,306 181,316 175,316 175,306"/>
-    <polygon points="202,310 208,296 214,310 211,306 211,316 205,316 205,306"/>
-    <polygon points="232,310 238,296 244,310 241,306 241,316 235,316 235,306"/>
-    <polygon points="262,310 268,296 274,310 271,306 271,316 265,316 265,306"/>
-  </g>
-
-  <!-- Tube exiting chamber to analyzer -->
-  <path d="M 278 200 C 326 196, 358 188, 400 208 C 432 222, 446 248, 446 274"
-        fill="none" stroke="#F5F1E8" stroke-width="5" opacity="0.78" stroke-linecap="round"/>
-
-  <!-- Analyzer box -->
-  <rect x="416" y="274" width="62" height="48" rx="5"
-        fill="#1B3D52" stroke="#F5F1E8" stroke-width="2.5"/>
-  <circle cx="432" cy="287" r="4.5" fill="#E07A5F"/>
-  <rect x="430" y="300" width="40" height="7" fill="#F5F1E8" opacity="0.6"/>
+  <!-- Reading lines on sensor (makes it look like a device) -->
+  <rect x="220" y="98" width="72" height="10" rx="5" fill="#F5F1E8"/>
+  <rect x="226" y="118" width="60" height="8" rx="4" fill="#F5F1E8" opacity="0.75"/>
+  <rect x="232" y="136" width="48" height="7" rx="3" fill="#F5F1E8" opacity="0.5"/>
 </svg>
