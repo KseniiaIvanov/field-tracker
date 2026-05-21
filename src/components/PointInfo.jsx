@@ -447,19 +447,43 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             />
           </div>
 
-          {/* ROW 6.5: AL Depth + Standing Water */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <div className="field-group">
-              <label>AL Depth cm</label>
-              <input type="number" min="0" step="1" value={data.activeLayerDepth || ''} onChange={(e) => setValue('activeLayerDepth', parseFloat(e.target.value) || '')} placeholder="thaw depth" />
+          {/* ROW 6.5: AL Depth (3 readings) + Standing Water */}
+          <div className="field-group">
+            <label>AL Depth cm</label>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+              {[1, 2, 3].map(i => (
+                <input
+                  key={i}
+                  type="number" min="0" step="1"
+                  value={data[`alDepth${i}`] ?? ''}
+                  placeholder={`#${i}`}
+                  onChange={(e) => {
+                    const v = e.target.value === '' ? '' : parseFloat(e.target.value)
+                    setValue(`alDepth${i}`, v)
+                    const vals = [
+                      i === 1 ? v : data.alDepth1,
+                      i === 2 ? v : data.alDepth2,
+                      i === 3 ? v : data.alDepth3
+                    ].filter(x => x !== '' && x !== null && x !== undefined && !isNaN(x))
+                    setValue('activeLayerDepth', vals.length ? Math.round(vals.reduce((a, b) => a + Number(b), 0) / vals.length) : '')
+                  }}
+                  style={{ width: '64px', textAlign: 'center' }}
+                />
+              ))}
+              {data.activeLayerDepth !== '' && data.activeLayerDepth !== undefined && (
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>
+                  ∅ {data.activeLayerDepth} cm
+                </span>
+              )}
             </div>
-            <div className="field-group">
-              <label>Standing Water</label>
-              <select value={data.standingWater ? 'yes' : 'no'} onChange={(e) => setValue('standingWater', e.target.value === 'yes')}>
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </div>
+          </div>
+
+          <div className="field-group">
+            <label>Standing Water</label>
+            <select value={data.standingWater ? 'yes' : 'no'} onChange={(e) => setValue('standingWater', e.target.value === 'yes')}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
           </div>
 
           {/* ROW 7: Site Notes */}
