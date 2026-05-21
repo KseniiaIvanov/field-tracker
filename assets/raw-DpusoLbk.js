@@ -1,0 +1,1 @@
+import{t as e}from"./index-AS1FvdRv.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};
