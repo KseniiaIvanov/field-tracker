@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist && git push origin gh-pages --force"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "geotiff": "^3.0.5",
