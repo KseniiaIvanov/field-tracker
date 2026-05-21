@@ -206,239 +206,193 @@ export default function Statistics({ setCurrentPage, allEntries }) {
   )
 }
 
-// Normal distribution PDF
-function normalPDF(x, mean, std) {
-  const coefficient = 1 / (std * Math.sqrt(2 * Math.PI))
-  const exponent = -Math.pow(x - mean, 2) / (2 * Math.pow(std, 2))
-  return coefficient * Math.exp(exponent)
+const PARAMETERS = [
+  { key: 'landscape',              label: 'Landscape',         type: 'categorical' },
+  { key: 'disturbance',            label: 'Disturbance',       type: 'categorical' },
+  { key: 'soilMoisture',           label: 'Soil Moisture',     type: 'categorical' },
+  { key: 'terrestrialAquatic',     label: 'Environment',       type: 'categorical' },
+  { key: 'organicMatterType',      label: 'Organic Matter',    type: 'categorical' },
+  { key: 'standingWater',          label: 'Standing Water',    type: 'boolean' },
+  { key: 'carbonFluxMeasurement',  label: 'Carbon Flux',       type: 'boolean' },
+  { key: 'weather.cloudCover',     label: 'Cloud Cover',       type: 'numeric', unit: '%',   bins: 10 },
+  { key: 'weather.temperature',    label: 'Air Temperature',   type: 'numeric', unit: '°C',  bins: 8  },
+  { key: 'weather.windSpeed',      label: 'Wind Speed',        type: 'numeric', unit: 'm/s', bins: 7  },
+  { key: 'activeLayerDepth',       label: 'AL Depth',          type: 'numeric', unit: 'cm',  bins: 8  },
+  { key: 'soilTemperature',        label: 'Soil Temperature',  type: 'numeric', unit: '°C',  bins: 8  },
+]
+
+function getNestedValue(obj, key) {
+  return key.split('.').reduce((o, k) => o?.[k], obj)
 }
 
 function ParameterDistributions({ entries }) {
-  const calculateStats = (values) => {
-    // Convert to numbers and filter valid values
-    const numericValues = values.map(v => {
-      if (v === null || v === undefined) return null
-      const num = parseFloat(v)
-      return isFinite(num) ? num : null
-    }).filter(v => v !== null)
+  const [selectedKey, setSelectedKey] = useState('landscape')
+  const param = PARAMETERS.find(p => p.key === selectedKey) || PARAMETERS[0]
 
-    if (numericValues.length === 0) return null
+  const chartData = useMemo(() => {
+    if (!entries.length) return null
 
-    const mean = numericValues.reduce((a, b) => a + b, 0) / numericValues.length
-    const variance = numericValues.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / numericValues.length
-    const std = Math.sqrt(variance)
-
-    return {
-      min: Math.min(...numericValues),
-      max: Math.max(...numericValues),
-      mean: isFinite(mean) ? mean : null,
-      std: isFinite(std) ? std : null,
-      count: numericValues.length
-    }
-  }
-
-  const ParameterHistogram = ({ values, label, unit, color }) => {
-    const stats = calculateStats(values)
-    if (!stats) {
-      return (
-        <div className="section">
-          <h4>{label}</h4>
-          <p style={{ color: 'var(--text-secondary)' }}>No data available</p>
-        </div>
-      )
+    if (param.type === 'boolean') {
+      const yes = entries.filter(e => getNestedValue(e, param.key)).length
+      const no = entries.length - yes
+      return { type: 'categorical', bars: [{ label: 'Yes', count: yes }, { label: 'No', count: no }] }
     }
 
-    // Responsive SVG size
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640
-    const SVG_WIDTH = isMobile ? 320 : 480
-    const SVG_HEIGHT = isMobile ? 220 : 280
-    const PADDING = isMobile ? { top: 15, right: 15, bottom: 30, left: 40 } : { top: 20, right: 20, bottom: 40, left: 50 }
-    const CHART_WIDTH = SVG_WIDTH - PADDING.left - PADDING.right
-    const CHART_HEIGHT = SVG_HEIGHT - PADDING.top - PADDING.bottom
-
-    const minVal = stats.min - stats.std
-    const maxVal = stats.max + stats.std
-    const range = maxVal - minVal
-
-    // Generate smooth curve
-    const curvePoints = 100
-    const step = range / curvePoints
-    const curveData = []
-
-    for (let i = 0; i <= curvePoints; i++) {
-      const x = minVal + i * step
-      const y = normalPDF(x, stats.mean, stats.std)
-      curveData.push({ x, y })
+    if (param.type === 'categorical') {
+      const counts = {}
+      entries.forEach(e => {
+        const val = String(getNestedValue(e, param.key) ?? '').trim() || '—'
+        counts[val] = (counts[val] || 0) + 1
+      })
+      const bars = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([label, count]) => ({ label, count }))
+      return { type: 'categorical', bars }
     }
 
-    const maxDensity = Math.max(...curveData.map(p => p.y), 0.001)
+    // numeric
+    const raw = entries
+      .map(e => parseFloat(getNestedValue(e, param.key)))
+      .filter(v => isFinite(v))
+    if (!raw.length) return null
 
-    const xScale = (val) => PADDING.left + ((val - minVal) / range) * CHART_WIDTH
-    const yScale = (density) => SVG_HEIGHT - PADDING.bottom - (density / maxDensity) * CHART_HEIGHT
-
-    // Create path for curve
-    const curvePath = curveData
-      .map((point, idx) => `${idx === 0 ? 'M' : 'L'} ${xScale(point.x)} ${yScale(point.y)}`)
-      .join(' ')
-
-    // Create filled area path
-    const baseline = SVG_HEIGHT - PADDING.bottom
-    let areaPath = `M ${xScale(curveData[0].x)} ${baseline}`
-    curveData.forEach((point) => {
-      areaPath += ` L ${xScale(point.x)} ${yScale(point.y)}`
+    const min = Math.min(...raw)
+    const max = Math.max(...raw)
+    const mean = raw.reduce((a, b) => a + b, 0) / raw.length
+    const std = Math.sqrt(raw.reduce((s, v) => s + (v - mean) ** 2, 0) / raw.length)
+    const binCount = param.bins || 8
+    const binSize = (max - min) / binCount || 1
+    const bins = Array.from({ length: binCount }, (_, i) => ({
+      label: (min + i * binSize).toFixed(1),
+      count: 0,
+      from: min + i * binSize,
+      to: min + (i + 1) * binSize
+    }))
+    raw.forEach(v => {
+      const idx = Math.min(Math.floor((v - min) / binSize), binCount - 1)
+      bins[idx].count++
     })
-    areaPath += ` L ${xScale(curveData[curveData.length - 1].x)} ${baseline} Z`
+    return { type: 'numeric', bars: bins, mean, std, min, max, n: raw.length, unit: param.unit }
+  }, [entries, selectedKey])
+
+  const BAR_COLOR = '#4a90d9'
+  const W = 340
+  const H = 200
+  const PAD = { top: 12, right: 12, bottom: 48, left: 36 }
+  const CW = W - PAD.left - PAD.right
+  const CH = H - PAD.top - PAD.bottom
+
+  const renderChart = () => {
+    if (!chartData) return <p style={{ color: 'var(--text-secondary)', padding: '16px 0' }}>No data for this parameter yet.</p>
+
+    const bars = chartData.bars
+    const maxCount = Math.max(...bars.map(b => b.count), 1)
+    const barW = CW / bars.length
+    const gap = Math.max(2, barW * 0.15)
 
     return (
-      <div className="section" style={{ flex: 1 }}>
-        <h4 style={{ marginBottom: '12px' }}>{label}</h4>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', maxWidth: '100%' }}>
+        {/* Y gridlines */}
+        {[0.25, 0.5, 0.75, 1].map(t => (
+          <line key={t}
+            x1={PAD.left} y1={PAD.top + CH * (1 - t)}
+            x2={PAD.left + CW} y2={PAD.top + CH * (1 - t)}
+            stroke="#ddd" strokeWidth="0.5" />
+        ))}
 
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-          {/* Histogram */}
-          <div style={{ flex: 1, overflowX: 'auto', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', padding: '12px' }}>
-            <svg width={SVG_WIDTH} height={SVG_HEIGHT} style={{ minWidth: '100%', display: 'block' }}>
-              {/* Grid lines */}
-              {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
-                <line
-                  key={`grid-${tick}`}
-                  x1={xScale(minVal + range * tick)}
-                  y1={PADDING.top}
-                  x2={xScale(minVal + range * tick)}
-                  y2={SVG_HEIGHT - PADDING.bottom}
-                  stroke="var(--border-color)"
-                  strokeDasharray="2,2"
-                  opacity="0.4"
-                />
-              ))}
+        {/* Axes */}
+        <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={PAD.top + CH} stroke="#999" strokeWidth="1" />
+        <line x1={PAD.left} y1={PAD.top + CH} x2={PAD.left + CW} y2={PAD.top + CH} stroke="#999" strokeWidth="1" />
 
-              {/* Filled area */}
-              <path d={areaPath} fill={color} opacity="0.25" />
+        {/* Y labels */}
+        {[0, Math.round(maxCount / 2), maxCount].map(v => (
+          <text key={v} x={PAD.left - 4} y={PAD.top + CH - (v / maxCount) * CH + 3}
+            textAnchor="end" fontSize="9" fill="#888">{v}</text>
+        ))}
 
-              {/* Curve */}
-              <path d={curvePath} stroke={color} strokeWidth="2.5" fill="none" opacity="0.8" />
+        {/* Bars */}
+        {bars.map((bar, i) => {
+          const bh = (bar.count / maxCount) * CH
+          const bx = PAD.left + i * barW + gap / 2
+          const by = PAD.top + CH - bh
+          const bw = barW - gap
+          const labelX = bx + bw / 2
+          const maxLabelLen = Math.floor(bw / 5.5)
+          const label = bar.label.length > maxLabelLen ? bar.label.slice(0, maxLabelLen - 1) + '…' : bar.label
 
-              {/* X-axis */}
-              <line
-                x1={PADDING.left}
-                y1={SVG_HEIGHT - PADDING.bottom}
-                x2={SVG_WIDTH - PADDING.right}
-                y2={SVG_HEIGHT - PADDING.bottom}
-                stroke="var(--text-primary)"
-                strokeWidth="1.5"
-              />
-
-              {/* Y-axis */}
-              <line
-                x1={PADDING.left}
-                y1={PADDING.top}
-                x2={PADDING.left}
-                y2={SVG_HEIGHT - PADDING.bottom}
-                stroke="var(--text-primary)"
-                strokeWidth="1.5"
-              />
-
-              {/* X-axis labels */}
-              {[0, 0.2, 0.4, 0.6, 0.8, 1].map((tick) => {
-                const val = minVal + range * tick
-                return (
-                  <g key={`x-label-${tick}`}>
-                    <line
-                      x1={xScale(val)}
-                      y1={SVG_HEIGHT - PADDING.bottom}
-                      x2={xScale(val)}
-                      y2={SVG_HEIGHT - PADDING.bottom + 4}
-                      stroke="var(--text-primary)"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={xScale(val)}
-                      y={SVG_HEIGHT - PADDING.bottom + 18}
-                      textAnchor="middle"
-                      fontSize="10"
-                      fill="var(--text-secondary)"
-                    >
-                      {val.toFixed(1)}
-                    </text>
-                  </g>
-                )
-              })}
-
-              {/* Y-axis label */}
-              <text
-                x={15}
-                y={PADDING.top + 20}
-                fontSize="11"
-                fill="var(--text-secondary)"
-                textAnchor="middle"
-              >
-                Density
+          return (
+            <g key={i}>
+              <rect x={bx} y={by} width={bw} height={bh || 1}
+                fill={BAR_COLOR} rx="2" opacity="0.85" />
+              {bar.count > 0 && (
+                <text x={labelX} y={by - 3} textAnchor="middle" fontSize="9" fill="#555" fontWeight="600">
+                  {bar.count}
+                </text>
+              )}
+              <text x={labelX} y={PAD.top + CH + 13} textAnchor="middle" fontSize="8.5" fill="#666">
+                {label}
               </text>
-            </svg>
-          </div>
+              {chartData.type === 'numeric' && (
+                <text x={labelX} y={PAD.top + CH + 24} textAnchor="middle" fontSize="7.5" fill="#aaa">
+                  {bar.label}
+                </text>
+              )}
+            </g>
+          )
+        })}
 
-          {/* Stats box */}
-          <div style={{
-            backgroundColor: 'rgba(76, 175, 80, 0.08)',
-            borderLeft: '4px solid #4CAF50',
-            padding: '12px 14px',
-            borderRadius: '4px',
-            minWidth: '160px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px'
-          }}>
-            <div>
-              <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '3px', fontWeight: '600' }}>Mean</div>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                {isFinite(stats.mean) ? `${stats.mean.toFixed(1)}${unit}` : 'N/A'}
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Std: {isFinite(stats.std) ? stats.std.toFixed(2) : 'N/A'}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '3px', fontWeight: '600' }}>Range</div>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
-                [{stats.min.toFixed(1)}, {stats.max.toFixed(1)}]
-              </div>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                n={stats.count}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '3px', fontWeight: '600' }}>Coverage</div>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                {((stats.count / entries.length) * 100).toFixed(1)}%
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        {/* Mean line for numeric */}
+        {chartData.type === 'numeric' && (() => {
+          const mx = PAD.left + ((chartData.mean - chartData.min) / (chartData.max - chartData.min || 1)) * CW
+          return (
+            <line x1={mx} y1={PAD.top} x2={mx} y2={PAD.top + CH}
+              stroke="#e74c3c" strokeWidth="1.5" strokeDasharray="4,3" />
+          )
+        })()}
+      </svg>
     )
   }
 
-  const soilMoistureValues = entries.map(e => e.soilMoisture).filter(v => v !== undefined && v !== null)
-  const soilTempValues = entries.map(e => e.soilTemperature).filter(v => v !== undefined && v !== null)
-
   return (
-    <div style={{ marginTop: '16px' }}>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-        gap: '16px'
-      }}>
-        <ParameterHistogram
-          values={soilMoistureValues}
-          label="🌧️ Soil Moisture Distribution"
-          unit="%"
-          color="#2196F3"
-        />
-        <ParameterHistogram
-          values={soilTempValues}
-          label="🌡️ Soil Temperature Distribution"
-          unit="°C"
-          color="#FF6B6B"
-        />
+    <div style={{ marginTop: '8px' }}>
+      {/* Parameter selector */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '16px' }}>
+        {PARAMETERS.map(p => (
+          <button key={p.key} onClick={() => setSelectedKey(p.key)}
+            style={{
+              padding: '5px 12px', fontSize: '12px', fontWeight: '600', borderRadius: '16px', border: 'none', cursor: 'pointer',
+              backgroundColor: selectedKey === p.key ? BAR_COLOR : 'var(--bg-secondary)',
+              color: selectedKey === p.key ? 'white' : 'var(--text-primary)'
+            }}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
+          <h4 style={{ margin: 0, fontSize: '15px' }}>{param.label}</h4>
+          {chartData?.type === 'numeric' && (
+            <span style={{ fontSize: '12px', color: '#888' }}>
+              n={chartData.n} · mean={chartData.mean.toFixed(1)}{param.unit} · σ={chartData.std.toFixed(1)}
+            </span>
+          )}
+          {chartData?.type === 'categorical' && (
+            <span style={{ fontSize: '12px', color: '#888' }}>
+              n={entries.length} · {chartData.bars.length} categories
+            </span>
+          )}
+        </div>
+
+        {renderChart()}
+
+        {chartData?.type === 'numeric' && (
+          <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '12px', color: '#888' }}>
+            <span>min: {chartData.min.toFixed(1)}{param.unit}</span>
+            <span>max: {chartData.max.toFixed(1)}{param.unit}</span>
+            <span style={{ color: '#e74c3c' }}>— mean</span>
+          </div>
+        )}
       </div>
     </div>
   )
