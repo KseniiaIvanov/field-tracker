@@ -1,1 +1,0 @@
-import{t as e}from"./index-G2FVC124.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};
