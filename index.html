@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/field-tracker/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <title>Field Campaign Tracker</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/field-tracker/manifest.json" />
+
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Field Tracker" />
+    <link rel="apple-touch-icon" href="/field-tracker/icon-192.png" />
+
+    <!-- Android Meta Tags -->
+    <meta name="theme-color" content="#1976d2" />
+
+    <!-- Status Bar Color for Android -->
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- PWA Start URL -->
+    <meta name="application-name" content="Field Campaign Tracker" />
+    <meta name="description" content="Arctic field research data collection and analysis" />
+
+    <!-- Disable auto-zoom on input focus -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <script type="module" crossorigin src="/field-tracker/assets/index-Bp0818Wh.js"></script>
+    <link rel="stylesheet" crossorigin href="/field-tracker/assets/index-D29pKJ57.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Service Worker temporarily disabled for battery testing
+      // if ('serviceWorker' in navigator) {
+      //   navigator.serviceWorker.register('/field-tracker/sw.js')
+      //     .then(reg => console.log('Service Worker registered'))
+      //     .catch(err => console.log('Service Worker registration failed:', err))
+      // }
+    </script>
+  </body>
+</html>

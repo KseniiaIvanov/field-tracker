@@ -1,0 +1,81 @@
+{
+  "name": "Field Campaign Tracker",
+  "short_name": "Field Tracker",
+  "description": "Arctic field research data collection and analysis",
+  "start_url": "/field-tracker/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "orientation": "portrait-primary",
+  "scope": "/field-tracker/",
+  "icons": [
+    {
+      "src": "/field-tracker/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/field-tracker/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/field-tracker/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/field-tracker/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/field-tracker/screenshot-1.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/field-tracker/screenshot-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "New Entry",
+      "short_name": "Entry",
+      "description": "Create a new field measurement entry",
+      "url": "/field-tracker/?page=diary",
+      "icons": [{"src": "/field-tracker/icon-shortcut.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Statistics",
+      "short_name": "Stats",
+      "description": "View data analysis and statistics",
+      "url": "/field-tracker/?page=statistics",
+      "icons": [{"src": "/field-tracker/icon-stats.png", "sizes": "192x192"}]
+    }
+  ],
+  "share_target": {
+    "action": "/field-tracker/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "media",
+          "accept": ["image/*", ".csv", ".xlsx", ".xls"]
+        }
+      ]
+    }
+  }
+}
