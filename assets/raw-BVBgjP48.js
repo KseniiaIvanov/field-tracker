@@ -1,1 +1,0 @@
-import{t as e}from"./index-H56uDpbP.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};
