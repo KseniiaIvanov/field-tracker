@@ -480,84 +480,59 @@ function App() {
                 />
               ) : (
                 <>
-                  {/* WIZARD HEADER */}
-                  <div style={{ paddingTop: '70px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                    <button className="btn-back" onClick={() => { setCurrentPage('home'); setCurrentStep(1); }} style={{ padding: '10px 16px', fontSize: '13px', minHeight: '36px', whiteSpace: 'nowrap', fontWeight: '600' }}>← Back</button>
-                    <div style={{ textAlign: 'center', flex: 1, minWidth: '150px' }}>
-                      <h2 style={{ margin: '0 0 2px 0', fontSize: '16px', fontWeight: '700' }}>Step {currentStep}/{WIZARD_STEPS.length}</h2>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.2' }}>{WIZARD_STEPS[currentStep - 1].name}</p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                  {/* TOP: Home + Quick/Copy buttons (smaller, secondary) */}
+                  <div style={{ paddingTop: '70px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <button className="btn-back" onClick={() => { setCurrentPage('home'); setCurrentStep(1); }} style={{ padding: '6px 12px', fontSize: '12px', minHeight: '30px', whiteSpace: 'nowrap', fontWeight: '600' }}>← Home</button>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       {currentStep === 1 && (
                         <button
                           onClick={() => setQuickMode(true)}
-                          style={{
-                            padding: '10px 20px',
-                            fontSize: '13px',
-                            minHeight: '36px',
-                            whiteSpace: 'nowrap',
-                            backgroundColor: 'var(--primary-color)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontWeight: '600'
-                          }}
-                          title="Switch to quick entry mode"
-                        >
-                          ⚡ Quick
-                        </button>
+                          style={{ padding: '6px 14px', fontSize: '12px', minHeight: '30px', whiteSpace: 'nowrap', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
+                        >⚡ Quick</button>
                       )}
                       {allEntries.length > 0 && (
-                        <button className="btn-copy-previous" onClick={copyFromPrevious} style={{ padding: '10px 16px', fontSize: '13px', minHeight: '36px', whiteSpace: 'nowrap', fontWeight: '600' }}>
+                        <button className="btn-copy-previous" onClick={copyFromPrevious} style={{ padding: '6px 12px', fontSize: '12px', minHeight: '30px', whiteSpace: 'nowrap', fontWeight: '600' }}>
                           📋 Copy
                         </button>
                       )}
                     </div>
                   </div>
 
-              {/* PROGRESS BAR */}
-              <div style={{ width: '100%', height: '6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '3px', marginBottom: '32px', overflow: 'hidden' }}>
-                <div style={{ width: `${(currentStep / WIZARD_STEPS.length) * 100}%`, height: '100%', backgroundColor: 'var(--success-color)', transition: 'width 0.3s ease' }} />
-              </div>
-
-              {/* TOP NAVIGATION BUTTONS */}
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', justifyContent: 'center' }}>
+              {/* STEP ROW: ← arrow | Step X/Y · Name | → arrow */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                 <button
                   onClick={prevStep}
                   disabled={currentStep === 1}
                   style={{
-                    padding: '10px 20px',
+                    width: '44px', height: '44px', flexShrink: 0,
                     backgroundColor: currentStep === 1 ? 'var(--bg-secondary)' : 'var(--primary-color)',
                     color: currentStep === 1 ? 'var(--text-tertiary)' : 'white',
-                    border: 'none',
-                    borderRadius: 'var(--radius-lg)',
+                    border: 'none', borderRadius: '8px',
                     cursor: currentStep === 1 ? 'not-allowed' : 'pointer',
-                    fontWeight: '600',
-                    fontSize: '14px',
-                    transition: 'all var(--transition-normal)'
+                    fontWeight: '700', fontSize: '18px'
                   }}
-                >
-                  ← Back
-                </button>
-                {currentStep < WIZARD_STEPS.length && (
-                  <button
-                    onClick={nextStep}
-                    style={{
-                      padding: '10px 20px',
-                      backgroundColor: 'var(--primary-color)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: 'var(--radius-lg)',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      transition: 'all var(--transition-normal)'
-                    }}
-                  >
-                    Next →
-                  </button>
-                )}
+                >←</button>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <h2 style={{ margin: '0 0 2px 0', fontSize: '15px', fontWeight: '700' }}>Step {currentStep}/{WIZARD_STEPS.length}</h2>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.2' }}>{WIZARD_STEPS[currentStep - 1].name}</p>
+                </div>
+                <button
+                  onClick={nextStep}
+                  disabled={currentStep === WIZARD_STEPS.length}
+                  style={{
+                    width: '44px', height: '44px', flexShrink: 0,
+                    backgroundColor: currentStep === WIZARD_STEPS.length ? 'var(--bg-secondary)' : 'var(--primary-color)',
+                    color: currentStep === WIZARD_STEPS.length ? 'var(--text-tertiary)' : 'white',
+                    border: 'none', borderRadius: '8px',
+                    cursor: currentStep === WIZARD_STEPS.length ? 'not-allowed' : 'pointer',
+                    fontWeight: '700', fontSize: '18px'
+                  }}
+                >→</button>
+              </div>
+
+              {/* PROGRESS BAR */}
+              <div style={{ width: '100%', height: '4px', backgroundColor: 'var(--bg-secondary)', borderRadius: '2px', marginBottom: '20px', overflow: 'hidden' }}>
+                <div style={{ width: `${(currentStep / WIZARD_STEPS.length) * 100}%`, height: '100%', backgroundColor: 'var(--success-color)', transition: 'width 0.3s ease' }} />
               </div>
 
 

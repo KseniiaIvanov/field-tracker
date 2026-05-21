@@ -440,7 +440,6 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             <label>Disturbances</label>
             <input
               type="text"
-              placeholder="thermokarst, erosion, trampling..."
               value={data.disturbance || ''}
               onChange={(e) => setValue('disturbance', e.target.value)}
               maxLength="60"
@@ -498,48 +497,49 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             />
           </div>
 
-          {/* ROW 8: Site Photo (compact) */}
-          <div className="field-group">
-            <label>📷 Site Photo</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <label style={{ display: 'inline-block', padding: '8px 14px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
-                + Add
-                <input type="file" accept="image/*" onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onloadend = () => setValue('entryPhotos', [...(data.entryPhotos || []), { id: Date.now(), originalData: reader.result, previewData: reader.result, name: file.name, type: file.type }])
-                    reader.readAsDataURL(file)
-                  }
-                  e.target.value = ''
-                }} style={{ display: 'none' }} />
-              </label>
-              {(data.entryPhotos || []).map((photo, idx) => (
-                <div key={photo.id} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', width: '60px', height: '60px', flexShrink: 0 }}>
-                  <img src={photo.previewData || photo.originalData} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button onClick={() => setValue('entryPhotos', (data.entryPhotos || []).filter(p => p.id !== photo.id))} style={{ position: 'absolute', top: '1px', right: '1px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: '18px', textAlign: 'center' }}>✕</button>
-                </div>
-              ))}
+          {/* ROW 8: Photo + Voice in one row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="field-group">
+              <label>📷 Photo</label>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <label style={{ display: 'inline-block', padding: '8px 12px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
+                  + Add
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onloadend = () => setValue('entryPhotos', [...(data.entryPhotos || []), { id: Date.now(), originalData: reader.result, previewData: reader.result, name: file.name, type: file.type }])
+                      reader.readAsDataURL(file)
+                    }
+                    e.target.value = ''
+                  }} style={{ display: 'none' }} />
+                </label>
+                {(data.entryPhotos || []).map((photo) => (
+                  <div key={photo.id} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', width: '48px', height: '48px', flexShrink: 0 }}>
+                    <img src={photo.previewData || photo.originalData} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button onClick={() => setValue('entryPhotos', (data.entryPhotos || []).filter(p => p.id !== photo.id))} style={{ position: 'absolute', top: '1px', right: '1px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '16px', height: '16px', cursor: 'pointer', fontSize: '10px', padding: 0, lineHeight: '16px', textAlign: 'center' }}>✕</button>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* ROW 9: Voice Notes (compact) */}
-          <div className="field-group">
-            <label>🎤 Voice Notes</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={isRecording ? stopRecording : startRecording}
-                style={{ padding: '8px 16px', backgroundColor: isRecording ? '#d32f2f' : '#f0f0f0', color: isRecording ? 'white' : '#1a1a1a', border: '1px solid #ddd', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
-              >
-                {isRecording ? `⏹ Stop (${recordingTime}s)` : '🎤 Record'}
-              </button>
-              {voiceNotes.map((note) => (
-                <div key={note.id} style={{ display: 'flex', gap: '4px', alignItems: 'center', padding: '4px 8px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
-                  <button type="button" onClick={() => playVoiceNote(note.data)} style={{ padding: '4px 8px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>▶ {note.duration}s</button>
-                  <button type="button" onClick={() => deleteVoiceNote(note.id)} style={{ padding: '2px 6px', backgroundColor: 'transparent', color: '#999', border: 'none', cursor: 'pointer', fontSize: '14px' }}>✕</button>
-                </div>
-              ))}
+            <div className="field-group">
+              <label>🎤 Voice</label>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={isRecording ? stopRecording : startRecording}
+                  style={{ padding: '8px 12px', backgroundColor: isRecording ? '#d32f2f' : '#f0f0f0', color: isRecording ? 'white' : '#1a1a1a', border: '1px solid #ddd', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
+                >
+                  {isRecording ? `⏹ ${recordingTime}s` : '🎤 Rec'}
+                </button>
+                {voiceNotes.map((note) => (
+                  <div key={note.id} style={{ display: 'flex', gap: '2px', alignItems: 'center', padding: '3px 6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
+                    <button type="button" onClick={() => playVoiceNote(note.data)} style={{ padding: '3px 6px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>▶ {note.duration}s</button>
+                    <button type="button" onClick={() => deleteVoiceNote(note.id)} style={{ padding: '1px 4px', backgroundColor: 'transparent', color: '#999', border: 'none', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
