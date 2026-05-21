@@ -1,1 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="46" fill="none" viewBox="0 0 48 46"><path fill="#863bff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" style="fill:#863bff;fill:color(display-p3 .5252 .23 1);fill-opacity:1"/><mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" style="fill:#000;fill-opacity:1"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#ede6ff" rx="10.399" ry="29.851" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -39.328 7.883)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#7e14ff" rx="5.508" ry="30.487" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -25.913 -14.639)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.814 -32.644 -3.334)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#7e14ff" rx="5.508" ry="30.599" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="matrix(.00324 1 1 -.00324 -34.34 30.47)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#ede6ff" rx="14.072" ry="22.078" style="fill:#ede6ff;fill:color(display-p3 .9275 .9033 1);fill-opacity:1" transform="rotate(93.35 24.506 48.493)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#7e14ff" rx="3.47" ry="21.501" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(89.009 28.708 47.59)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx=".387" cy="8.972" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(39.51 .387 8.972)"/></g><g filter="url(#k)"><ellipse cx="47.523" cy="-6.092" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 47.523 -6.092)"/></g><g filter="url(#l)"><ellipse cx="41.412" cy="6.333" fill="#47bfff" rx="5.971" ry="9.665" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 41.412 6.333)"/></g><g filter="url(#m)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#n)"><ellipse cx="-1.879" cy="38.332" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 -1.88 38.332)"/></g><g filter="url(#o)"><ellipse cx="35.651" cy="29.907" fill="#7e14ff" rx="4.407" ry="29.108" style="fill:#7e14ff;fill:color(display-p3 .4922 .0767 1);fill-opacity:1" transform="rotate(37.892 35.651 29.907)"/></g><g filter="url(#p)"><ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" style="fill:#47bfff;fill:color(display-p3 .2799 .748 1);fill-opacity:1" transform="rotate(37.892 38.418 32.4)"/></g></g><defs><filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-43.513" y="21.178" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="15.756" y="-17.901" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="23.548" y="2.284" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-27.636" y="-22.853" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="20.116" y="-38.415" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="24.641" y="-11.323" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-29.286" y="6.009" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="8.244" y="-2.416" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="18.713" y="10.588" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/></filter></defs></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="92" fill="#0F2A3A"/>
+
+  <!-- ===== TOPO CONTOURS (landscape) — summit shifted left where the chamber sits ===== -->
+  <!-- Outermost contour with a side lobe -->
+  <path d="
+    M 38 348
+    C 22 290, 70 232, 142 222
+    C 184 218, 214 232, 248 226
+    C 294 218, 348 220, 398 244
+    C 446 268, 478 312, 478 360
+    C 478 408, 450 442, 410 466
+    C 366 488, 312 490, 256 484
+    C 196 478, 138 478, 92 458
+    C 54 440, 32 396, 38 348 Z" fill="#1B3D52"/>
+
+  <!-- Band 2 -->
+  <path d="
+    M 82 348
+    C 70 296, 124 252, 192 246
+    C 232 244, 256 254, 290 246
+    C 328 238, 372 244, 408 268
+    C 442 292, 458 328, 452 368
+    C 448 406, 418 438, 380 458
+    C 338 476, 292 472, 252 470
+    C 202 468, 158 466, 122 450
+    C 88 432, 76 392, 82 348 Z" fill="#2C5868"/>
+
+  <!-- Band 3 -->
+  <path d="
+    M 116 348
+    C 110 304, 156 274, 216 270
+    C 252 268, 274 278, 302 274
+    C 338 268, 374 282, 392 308
+    C 408 334, 410 360, 400 386
+    C 388 410, 360 426, 330 436
+    C 298 446, 264 442, 234 442
+    C 196 442, 162 432, 146 410
+    C 130 390, 118 372, 116 348 Z" fill="#3D6F72"/>
+
+  <!-- Band 4 — summit, chamber sits on this -->
+  <path d="
+    M 140 350
+    C 134 318, 162 296, 200 296
+    C 230 294, 252 304, 280 300
+    C 312 296, 340 308, 350 332
+    C 360 354, 350 380, 322 392
+    C 290 406, 254 408, 226 404
+    C 200 402, 178 396, 162 388
+    C 150 380, 140 366, 140 350 Z" fill="#4F8062"/>
+
+  <!-- ===== UPPER-LEFT SECONDARY MINI-HILL ===== -->
+  <path d="
+    M 56 96
+    C 46 70, 86 50, 122 56
+    C 154 62, 172 84, 164 110
+    C 156 132, 124 138, 96 132
+    C 76 126, 62 114, 56 96 Z" fill="#1B3D52"/>
+  <path d="
+    M 76 96
+    C 72 82, 102 70, 124 76
+    C 144 80, 154 94, 146 108
+    C 138 120, 116 124, 100 118
+    C 88 112, 78 106, 76 96 Z" fill="#2C5868"/>
+  <ellipse cx="116" cy="98" rx="11" ry="6" fill="#3D6F72"/>
+
+  <!-- Meandering stream across upper area -->
+  <path d="M 0 56 C 60 76, 130 36, 210 66 C 290 96, 360 56, 430 86 C 466 100, 494 92, 512 106"
+        fill="none" stroke="#7BB0C8" stroke-width="3" opacity="0.55" stroke-linecap="round"/>
+
+  <!-- Subtle isohypse highlight strokes -->
+  <g fill="none" stroke="#F5F1E8" stroke-width="1.6" opacity="0.25" stroke-linejoin="round">
+    <path d="M 82 348 C 70 296, 124 252, 192 246 C 232 244, 256 254, 290 246 C 328 238, 372 244, 408 268 C 442 292, 458 328, 452 368 C 448 406, 418 438, 380 458 C 338 476, 292 472, 252 470 C 202 468, 158 466, 122 450 C 88 432, 76 392, 82 348 Z"/>
+    <path d="M 116 348 C 110 304, 156 274, 216 270 C 252 268, 274 278, 302 274 C 338 268, 374 282, 392 308 C 408 334, 410 360, 400 386 C 388 410, 360 426, 330 436 C 298 446, 264 442, 234 442 C 196 442, 162 432, 146 410 C 130 390, 118 372, 116 348 Z"/>
+    <path d="M 140 350 C 134 318, 162 296, 200 296 C 230 294, 252 304, 280 300 C 312 296, 340 308, 350 332 C 360 354, 350 380, 322 392 C 290 406, 254 408, 226 404 C 200 402, 178 396, 162 388 C 150 380, 140 366, 140 350 Z"/>
+  </g>
+
+  <!-- Sample points (cream) scattered across slopes -->
+  <circle cx="60"  cy="410" r="7" fill="#F5F1E8" opacity="0.8"/>
+  <circle cx="92"  cy="470" r="7" fill="#F5F1E8" opacity="0.8"/>
+  <circle cx="430" cy="430" r="7" fill="#F5F1E8" opacity="0.8"/>
+  <circle cx="470" cy="370" r="7" fill="#F5F1E8" opacity="0.8"/>
+  <circle cx="200" cy="490" r="6" fill="#F5F1E8" opacity="0.7"/>
+  <circle cx="368" cy="478" r="6" fill="#F5F1E8" opacity="0.7"/>
+  <circle cx="300" cy="172" r="6" fill="#F5F1E8" opacity="0.7"/>
+  <circle cx="400" cy="195" r="6" fill="#F5F1E8" opacity="0.7"/>
+
+  <!-- ===== FLUX CHAMBER (bigger, shifted left) ===== -->
+  <!-- Chamber base / collar pressed into the soil -->
+  <rect x="138" y="310" width="148" height="16" rx="3" fill="#2A3D2E"/>
+
+  <!-- Chamber walls (transparent glass panel) -->
+  <rect x="146" y="148" width="132" height="172" rx="9"
+        fill="#F5F1E8" opacity="0.13"
+        stroke="#F5F1E8" stroke-width="5"/>
+
+  <!-- Chamber top cap highlight -->
+  <rect x="146" y="148" width="132" height="13" rx="6" fill="#F5F1E8" opacity="0.35"/>
+
+  <!-- Inner glass reflection line -->
+  <line x1="162" y1="166" x2="162" y2="308" stroke="#F5F1E8" stroke-width="2.5" opacity="0.4"/>
+
+  <!-- Gas molecules inside the chamber -->
+  <circle cx="174" cy="194" r="11" fill="#E07A5F"/>
+  <circle cx="230" cy="180" r="8"  fill="#E07A5F"/>
+  <circle cx="206" cy="232" r="13" fill="#E07A5F"/>
+  <circle cx="248" cy="218" r="7"  fill="#E07A5F"/>
+  <circle cx="184" cy="260" r="9"  fill="#E07A5F"/>
+  <circle cx="240" cy="270" r="11" fill="#E07A5F"/>
+  <circle cx="206" cy="290" r="6"  fill="#E07A5F"/>
+
+  <!-- Upward flux arrows -->
+  <g fill="#E07A5F" opacity="0.75">
+    <polygon points="172,310 178,296 184,310 181,306 181,316 175,316 175,306"/>
+    <polygon points="202,310 208,296 214,310 211,306 211,316 205,316 205,306"/>
+    <polygon points="232,310 238,296 244,310 241,306 241,316 235,316 235,306"/>
+    <polygon points="262,310 268,296 274,310 271,306 271,316 265,316 265,306"/>
+  </g>
+
+  <!-- Tube exiting chamber to analyzer -->
+  <path d="M 278 200 C 326 196, 358 188, 400 208 C 432 222, 446 248, 446 274"
+        fill="none" stroke="#F5F1E8" stroke-width="5" opacity="0.78" stroke-linecap="round"/>
+
+  <!-- Analyzer box -->
+  <rect x="416" y="274" width="62" height="48" rx="5"
+        fill="#1B3D52" stroke="#F5F1E8" stroke-width="2.5"/>
+  <circle cx="432" cy="287" r="4.5" fill="#E07A5F"/>
+  <rect x="430" y="300" width="40" height="7" fill="#F5F1E8" opacity="0.6"/>
+</svg>
