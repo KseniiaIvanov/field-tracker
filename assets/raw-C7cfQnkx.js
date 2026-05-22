@@ -1,1 +1,0 @@
-import{t as e}from"./index-Cm7dBiHL.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};
