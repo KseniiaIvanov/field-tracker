@@ -1,5 +1,5 @@
-const CACHE_NAME = 'field-tracker-v2'
-const RUNTIME_CACHE = 'field-tracker-runtime-v2'
+const CACHE_NAME = 'field-tracker-v3'
+const RUNTIME_CACHE = 'field-tracker-runtime-v3'
 
 const STATIC_ASSETS = [
   '/field-tracker/',
