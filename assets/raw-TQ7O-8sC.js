@@ -1,1 +1,0 @@
-import{t as e}from"./index-BOiIgKYL.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};

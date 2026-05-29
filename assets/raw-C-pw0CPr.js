@@ -1,0 +1,1 @@
+import{t as e}from"./index-CBOC2VB4.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};
