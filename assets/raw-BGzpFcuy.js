@@ -1,1 +1,0 @@
-import{t as e}from"./index-CI6CV88t.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};
