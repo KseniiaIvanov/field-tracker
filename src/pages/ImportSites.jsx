@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import localforage from 'localforage'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
@@ -22,9 +22,14 @@ export default function ImportSites({ setCurrentPage, onSitesImported }) {
     soilTemperature: ''
   })
 
+  const fileInputRef = useRef(null)
+
   const handleFileUpload = async (e) => {
     const uploadedFile = e.target.files?.[0]
     if (!uploadedFile) return
+
+    // Reset input so same file can be re-selected
+    e.target.value = ''
 
     setLoading(true)
     setError(null)
@@ -32,19 +37,38 @@ export default function ImportSites({ setCurrentPage, onSitesImported }) {
     try {
       let data = []
 
-      if (uploadedFile.name.endsWith('.csv')) {
-        // Parse CSV
-        const text = await uploadedFile.text()
-        const parsed = Papa.parse(text, { header: true })
-        data = parsed.data.filter(row => Object.values(row).some(v => v))
-      } else if (uploadedFile.name.endsWith('.xlsx') || uploadedFile.name.endsWith('.xls')) {
+      // Detect type by both extension AND mime type (Android sometimes changes these)
+      const name = uploadedFile.name.toLowerCase()
+      const mime = uploadedFile.type.toLowerCase()
+      const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls') ||
+        mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('ms-excel')
+      const isCsv = name.endsWith('.csv') || mime.includes('csv') ||
+        mime === 'text/plain' || mime === ''
+
+      if (isExcel) {
         // Parse Excel
         const buffer = await uploadedFile.arrayBuffer()
         const workbook = XLSX.read(buffer, { type: 'array' })
         const sheet = workbook.Sheets[workbook.SheetNames[0]]
         data = XLSX.utils.sheet_to_json(sheet)
+      } else if (isCsv) {
+        // Parse CSV (also handles text/plain files from Android)
+        const text = await uploadedFile.text()
+        const parsed = Papa.parse(text, { header: true, skipEmptyLines: true })
+        if (parsed.errors.length > 0 && data.length === 0) {
+          throw new Error(`CSV parse error: ${parsed.errors[0].message}`)
+        }
+        data = parsed.data.filter(row => Object.values(row).some(v => v))
       } else {
-        throw new Error('Unsupported file format. Use CSV or Excel (.xlsx, .xls)')
+        // Last resort: try CSV anyway
+        try {
+          const text = await uploadedFile.text()
+          const parsed = Papa.parse(text, { header: true, skipEmptyLines: true })
+          data = parsed.data.filter(row => Object.values(row).some(v => v))
+          if (data.length === 0) throw new Error('empty')
+        } catch {
+          throw new Error(`Unsupported format: "${uploadedFile.name}" (type: "${uploadedFile.type || 'unknown'}"). Use CSV or Excel.`)
+        }
       }
 
       if (data.length === 0) {
@@ -188,13 +212,28 @@ export default function ImportSites({ setCurrentPage, onSitesImported }) {
 
         <div className="field-group">
           <label>Select File</label>
+          {/* Hidden input — triggered programmatically to avoid Android label bug */}
           <input
+            ref={fileInputRef}
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.xlsx,.xls,text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={handleFileUpload}
-            disabled={loading}
-            style={{ padding: '8px' }}
+            style={{ display: 'none' }}
           />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={loading}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              width: '100%', padding: '14px 20px',
+              backgroundColor: loading ? 'var(--bg-secondary)' : 'var(--primary-color)',
+              color: loading ? 'var(--text-secondary)' : 'white',
+              borderRadius: '10px', cursor: loading ? 'not-allowed' : 'pointer',
+              fontWeight: '700', fontSize: '15px', border: 'none'
+            }}
+          >
+            {loading ? '⏳ Loading…' : '📂 Choose CSV / Excel file'}
+          </button>
         </div>
 
         {error && (

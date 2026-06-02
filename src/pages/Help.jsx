@@ -32,31 +32,43 @@ export default function Help({ setCurrentPage }) {
       title: 'Step 1: Site Info',
       tips: [
         '🔢 Site # MUST match your data logger',
-        '📝 Add notes immediately (don\'t wait)',
-        '🎤 Record voice notes for urgent observations',
-        '📍 GPS averages 2 min for accuracy'
+        '📍 GPS averages 60 sec — stand still for accuracy',
+        '📝 Landscape, disturbance, organic matter type',
+        '🎤 Voice notes + 📷 photo in one row at bottom',
+        '📋 Copy button reuses collector, landscape from previous site'
+      ]
+    },
+    {
+      id: 'weather',
+      icon: '🌤️',
+      title: 'Step 2: Weather',
+      tips: [
+        '☁️ Cloud cover, precipitation, wind speed & direction',
+        '🌡️ Air temperature',
+        '⏱️ Record at time of measurement, not start of day'
       ]
     },
     {
       id: 'vegetation',
       icon: '🌱',
-      title: 'Vegetation (Steps 3-4)',
+      title: 'Step 3: Vegetation',
       tips: [
-        '📊 Short: Quick coverage (0/1/2 scale)',
-        '🔬 Long: Detailed species composition',
-        '📸 Photos for entire vegetation section (end of form)',
-        '➕ Add custom categories anytime'
+        '📊 One row per category: coverage (0/1/2) + height cm',
+        '➕ Add custom categories with the + button',
+        '📸 Add vegetation photos at the bottom of the step',
+        '🌍 Environment (Terrestrial/Aquatic) at the very end of step'
       ]
     },
     {
       id: 'soil-gas',
       icon: '🔬',
-      title: 'Soil (Step 5)',
+      title: 'Step 4: Soil & Morphology',
       tips: [
-        '❄️ Active layer = thaw depth (controls CO₂)',
-        '💧 Standing water → anaerobic → CH₄',
-        '🌍 Organic type: Live/Litter/Peat (decomposition rates)',
-        '🔧 Disturbance: None/Thermokarst/Erosion/Trampling/etc'
+        '❄️ AL depth: 3 probe readings → auto-average calculated',
+        '🌡️ Soil temp °C + soil moisture % in one row',
+        '💧 Moisture type (Dry/Moist/Wet/Saturated) + Standing Water in one row',
+        '🪨 Add soil layers with depth from/to + soil type',
+        '🗺️ Morphology: topographic position description'
       ]
     },
     {
@@ -180,6 +192,10 @@ export default function Help({ setCurrentPage }) {
         <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
           <tbody>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <td style={{ padding: '6px 8px' }}>📋 Steps</td>
+              <td style={{ padding: '6px 8px', textAlign: 'right' }}>5 steps total</td>
+            </tr>
+            <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '6px 8px' }}>⚡ Quick Mode</td>
               <td style={{ padding: '6px 8px', textAlign: 'right' }}>~30 sec entry</td>
             </tr>
@@ -188,16 +204,20 @@ export default function Help({ setCurrentPage }) {
               <td style={{ padding: '6px 8px', textAlign: 'right' }}>Step 1</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+              <td style={{ padding: '6px 8px' }}>❄️ AL Depth</td>
+              <td style={{ padding: '6px 8px', textAlign: 'right' }}>3 readings, Step 4</td>
+            </tr>
+            <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '6px 8px' }}>📸 Photos</td>
-              <td style={{ padding: '6px 8px', textAlign: 'right' }}>Embedded in JSON</td>
+              <td style={{ padding: '6px 8px', textAlign: 'right' }}>Step 1 + Step 5</td>
             </tr>
             <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
               <td style={{ padding: '6px 8px' }}>🎯 GPS Averaging</td>
-              <td style={{ padding: '6px 8px', textAlign: 'right' }}>2 min, ±5-20m</td>
+              <td style={{ padding: '6px 8px', textAlign: 'right' }}>60 sec, ±5-20m</td>
             </tr>
             <tr>
-              <td style={{ padding: '6px 8px' }}>🔄 Quick Buttons</td>
-              <td style={{ padding: '6px 8px', textAlign: 'right' }}>Wind, Disturbance</td>
+              <td style={{ padding: '6px 8px' }}>💾 Save Entry</td>
+              <td style={{ padding: '6px 8px', textAlign: 'right' }}>Step 5 + JSON backup</td>
             </tr>
           </tbody>
         </table>

@@ -16,7 +16,7 @@ export async function parseGeoTIFF(file, targetCRS = 'EPSG:4326') {
 
     const width = image.getWidth()
     const height = image.getHeight()
-    const pixelData = await image.readRasters()
+    const pixelData = await image.readRasters({ pool: null })
 
     // Check if this is an RGB/RGBA image or single-band
     const samplesPerPixel = image.getSamplesPerPixel()
@@ -724,12 +724,27 @@ export function coordinateToPixel(rasterData, lat, lon) {
   }
 }
 
+// Centralized NoData / NA detection. Treats common GeoTIFF fill sentinels
+// (-9999, -9998, -32768, huge positives), NaN/Inf, and the raster's declared
+// noData value as missing. Used everywhere a pixel value is read so -9999 never
+// leaks into histograms, stats, the priority grid, or the planner table.
+export function isNoDataValue(value, rasterData = null) {
+  if (value === null || value === undefined || !isFinite(value)) return true
+  if (rasterData && rasterData.noData != null && isFinite(rasterData.noData) && value === rasterData.noData) return true
+  if (value <= -9000) return true   // -9999, -9998, -32768, etc.
+  if (value >= 1e20) return true    // large positive fill
+  return false
+}
+
 export function getPixelValue(rasterData, pixelX, pixelY) {
   if (pixelX < 0 || pixelX >= rasterData.width || pixelY < 0 || pixelY >= rasterData.height) {
     return null
   }
   const index = pixelY * rasterData.width + pixelX
   const value = rasterData.pixels[index]
+
+  // Treat NoData / NA sentinels as missing so they're excluded everywhere downstream
+  if (isNoDataValue(value, rasterData)) return null
 
   // Debug: log pixel value type on first call
   if (!window._pixelDebugLogged) {
@@ -985,14 +1000,19 @@ export function getPolygonBounds(polygon) {
   }
 }
 
-export function calculateHistogram(values, binCount = 20) {
+export function calculateHistogram(values, binCount = 20, forcedMin = null, forcedMax = null) {
   if (values.length === 0) {
     return { bins: [], stats: {} }
   }
 
   const sorted = [...values].sort((a, b) => a - b)
-  const min = sorted[0]
-  const max = sorted[sorted.length - 1]
+  const dataMin = sorted[0]
+  const dataMax = sorted[sorted.length - 1]
+
+  // Use forced range when aligning site histogram to area histogram's bins
+  // This ensures bin[i] covers the same value range in both histograms
+  const min = forcedMin !== null ? forcedMin : dataMin
+  const max = forcedMax !== null ? forcedMax : dataMax
   const range = max - min || 1
   const binWidth = range / binCount
 
@@ -1031,8 +1051,10 @@ export function calculateHistogram(values, binCount = 20) {
       count: values.length,
       mean: mean.toFixed(3),
       std: std.toFixed(3),
-      min: min.toFixed(3),
-      max: max.toFixed(3),
+      // Always use actual data min/max for stats (not forced range)
+      // so coverage assessment and display curves remain accurate
+      min: dataMin.toFixed(3),
+      max: dataMax.toFixed(3),
       median: percentiles.p50,
       p25: percentiles.p25,
       p75: percentiles.p75

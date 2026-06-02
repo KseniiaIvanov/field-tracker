@@ -46,18 +46,17 @@ function PriorityHeatMapViewerComponent({
 
   return (
     <div style={{ position: 'relative' }}>
-      {/* Heat Map Canvas */}
+      {/* Heat Map Canvas — bitmap is raster-sized; CSS scales it to fill the container width
+          while preserving aspect ratio (height: auto). */}
       <canvas
         ref={canvasRef}
         width={width}
         height={height}
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          cursor: 'crosshair',
-          border: 'none',
-          zIndex: 5
+          display: 'block',
+          width: '100%',
+          height: 'auto',
+          border: 'none'
         }}
       />
 

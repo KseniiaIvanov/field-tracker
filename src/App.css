@@ -42,6 +42,8 @@ body {
   --primary-color: #6750a4;
   --primary-light: #eaddff;
   --primary-dark: #4d3e8f;
+  --accent-color: #6750a4;
+  --accent-light: #eaddff;
 
   /* COLORS - SEMANTIC */
   --success-color: #2d6a4f;
@@ -388,14 +390,14 @@ body {
 /* MORPHOLOGY */
 .morphology-buttons {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: var(--spacing-sm);
 }
 
 .morphology-btn {
   flex: 1;
-  min-width: 100px;
-  padding: var(--spacing-md);
+  min-width: 0;
+  padding: 10px 8px;
   border: 2px solid var(--border-color);
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -1078,6 +1080,7 @@ h3 {
 .page-content {
   max-width: 900px;
   margin: 0 auto;
+  padding-top: calc(env(safe-area-inset-top, 20px) + 56px);
   padding-bottom: var(--spacing-xl);
 }
 
@@ -1674,7 +1677,7 @@ h3 {
   }
 
   .morphology-buttons {
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .diary-top-actions {

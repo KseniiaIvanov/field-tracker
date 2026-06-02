@@ -26,8 +26,8 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
   const CHART_WIDTH = SVG_WIDTH - PADDING.left - PADDING.right
   const CHART_HEIGHT = SVG_HEIGHT - PADDING.top - PADDING.bottom
 
-  // Responsive font size based on chart scale
-  const fontSize = Math.max(8, Math.floor(11 * scaleFactor))
+  // Font size relative to viewBox (not screen px) — viewBox is always 800 wide
+  const fontSize = 18
 
   const maxDensity = useMemo(() => {
     // Use density for Y-axis (normalized by sample size)
@@ -123,11 +123,8 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
   return (
     <div className="histogram-comparison">
       {/* Main Overlaid Histogram */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '6px' }}>
         <div style={{ marginBottom: '12px' }}>
-          <h4 style={{ marginBottom: '8px', color: 'var(--text-primary)' }}>
-            📊 Distribution Comparison
-          </h4>
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', gap: '24px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '16px', height: '12px', backgroundColor: '#2196F3', opacity: 0.6 }}></div>
@@ -135,13 +132,13 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '16px', height: '12px', backgroundColor: '#FF5722', opacity: 0.6 }}></div>
-              Values in Study Area (n={areaStats.stats.count})
+              Values in Polygon (n={areaStats.stats.count})
             </label>
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', padding: '16px' }}>
-          <svg width={SVG_WIDTH} height={SVG_HEIGHT} style={{ minWidth: '100%', display: 'block' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', padding: '16px' }}>
+          <svg viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} width="100%" style={{ display: 'block' }}>
             {/* Grid lines */}
             {[0, 0.25, 0.5, 0.75, 1].map((tick) => (
               <line
@@ -239,7 +236,7 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
                     x={PADDING.left - 10}
                     y={y + 4}
                     textAnchor="end"
-                    fontSize="11"
+                    fontSize={fontSize}
                     fill="var(--text-secondary)"
                   >
                     {density.toFixed(3)}
@@ -251,22 +248,22 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
             {/* Axis labels */}
             <text
               x={PADDING.left + CHART_WIDTH / 2}
-              y={SVG_HEIGHT - 10}
+              y={SVG_HEIGHT - 8}
               textAnchor="middle"
-              fontSize={Math.max(9, Math.floor(12 * scaleFactor))}
+              fontSize={fontSize}
               fill="var(--text-secondary)"
               fontWeight="500"
             >
-              Index Value
+              Value
             </text>
             <text
-              x={20}
+              x={22}
               y={PADDING.top + CHART_HEIGHT / 2}
               textAnchor="middle"
-              fontSize={Math.max(9, Math.floor(12 * scaleFactor))}
+              fontSize={fontSize}
               fill="var(--text-secondary)"
               fontWeight="500"
-              transform={`rotate(-90 20 ${PADDING.top + CHART_HEIGHT / 2})`}
+              transform={`rotate(-90 22 ${PADDING.top + CHART_HEIGHT / 2})`}
             >
               Density
             </text>
@@ -277,35 +274,35 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
       {/* Coverage Assessment - Compact */}
       {coverage && (
         <div className="coverage-assessment" style={{
-          padding: '12px',
+          padding: '8px 10px',
           backgroundColor: getCoverageColor(coverage.assessment),
           borderRadius: '8px',
           borderLeft: `4px solid ${getAssessmentBorderColor(coverage.assessment)}`,
-          marginBottom: '24px'
+          marginBottom: '16px'
         }}>
           {/* Main metric: Distribution Match */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '4px' }}>
             <div>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '2px', fontWeight: '600' }}>
-                DISTRIBUTION MATCH
+              <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '1px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                DISTR. MATCH
               </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
                 {coverage.distributionMatch}%
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '2px', fontWeight: '600' }}>
+              <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '1px', fontWeight: '600' }}>
                 RANGE COVERAGE
               </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
                 {coverage.rangeCoverage}%
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '2px', fontWeight: '600' }}>
+              <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '1px', fontWeight: '600' }}>
                 ASSESSMENT
               </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' }}>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
                 {coverage.assessment}
               </div>
             </div>
@@ -315,11 +312,11 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '12px',
-            padding: '8px 0',
+            gap: '10px',
+            padding: '4px 0 0',
             fontSize: '9px',
             color: 'var(--text-secondary)',
-            lineHeight: '1.2'
+            lineHeight: '1.15'
           }}>
             <div>
               <div>Mean: {coverage.meanMatch}%</div>

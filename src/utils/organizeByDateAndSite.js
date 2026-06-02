@@ -139,11 +139,18 @@ export async function createOrganizedZip(entries) {
       // Add voice notes if present
       if (entry.voiceNotes && Array.isArray(entry.voiceNotes)) {
         entry.voiceNotes.forEach((note, noteIndex) => {
-          if (note.audioData) {
-            const timestamp = note.timestamp ? new Date(note.timestamp).toISOString().slice(11, 19) : noteIndex
-            const audioName = `voice_note_${timestamp}.wav`
-            const base64 = note.audioData.split(',')[1]
-            const audioBlob = base64ToBlob(base64, 'audio/wav')
+          const audioData = note.data || note.audioData
+          if (audioData) {
+            const base64 = audioData.split(',')[1]
+            if (!base64) return
+            const mimeMatch = audioData.match(/data:([^;]+);base64/)
+            const mimeType = mimeMatch ? mimeMatch[1] : 'audio/webm'
+            const ext = mimeType.includes('wav') ? '.wav'
+              : mimeType.includes('ogg') ? '.ogg'
+              : mimeType.includes('mp4') || mimeType.includes('m4a') ? '.m4a'
+              : '.webm'
+            const audioName = `voice_note_${noteIndex + 1}${ext}`
+            const audioBlob = base64ToBlob(base64, mimeType)
             zip.file(
               `${siteFolderPath}/voice_notes/${audioName}`,
               audioBlob

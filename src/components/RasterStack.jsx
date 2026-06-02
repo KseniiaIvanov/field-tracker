@@ -8,6 +8,14 @@ const CATEGORIES = {
   other: { label: 'Other', color: '#9C27B0' }
 }
 
+// Default colormap per category (user can still change in the viewer)
+const CATEGORY_COLORMAPS = {
+  moisture: 'blues',
+  vegetation: 'greens',
+  disturbance: 'reds',
+  other: 'plasma'
+}
+
 export default function RasterStack({
   rgbRaster,
   rgbDataCache,
@@ -202,31 +210,13 @@ export default function RasterStack({
               {/* Category Raster Viewer - Shown Only When Visible */}
               {isVisible && (
                 <div>
-                  {/* DEBUG: Show CRS and geotransform info from metadata ONLY */}
-                  <div style={{
-                    padding: '8px 12px',
-                    backgroundColor: 'rgba(255, 152, 0, 0.1)',
-                    border: '1px solid #FF9800',
-                    borderRadius: '4px',
-                    marginBottom: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    <strong style={{ color: '#FF9800' }}>🔍 DEBUG INFO (from metadata):</strong><br/>
-                    CRS: {rasterData.crs}<br/>
-                    Size: {rasterData.width}×{rasterData.height} px<br/>
-                    Geotransform: [{rasterData.geotransform?.map((v, i) => i === 0 || i === 3 ? v.toFixed(2) : v.toFixed(6)).join(', ')}]<br/>
-                    Pixel size: {Math.abs(rasterData.geotransform?.[1]).toFixed(6)} × {Math.abs(rasterData.geotransform?.[5]).toFixed(6)} (no conversion - as-is from metadata)
-                  </div>
-
                   <RasterViewer
                     rasterData={rasterDataCache[key]}
                     polygon={polygon}
                     onPolygonChange={onPolygonChange}
                     sites={allEntries || []}
                     candidatePoints={candidatePoints}
-                    colormap="viridis"
+                    colormap={CATEGORY_COLORMAPS[key] || 'viridis'}
                     opacity={0.8}
                     readOnly={false}
                   />

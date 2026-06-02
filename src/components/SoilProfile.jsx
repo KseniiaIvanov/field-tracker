@@ -63,37 +63,97 @@ export default function SoilProfile({ control, watch, setValue }) {
         <div className="section-content">
           <div className="soil-measurements">
             <div className="field-group">
-              <label>Active Layer Depth</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <label>AL Depth cm (3 readings)</label>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                {[1, 2, 3].map(i => (
+                  <input
+                    key={i}
+                    type="number" min="0" step="1"
+                    value={data[`alDepth${i}`] ?? ''}
+                    placeholder={`#${i}`}
+                    onChange={(e) => {
+                      const v = e.target.value === '' ? '' : parseFloat(e.target.value)
+                      setValue(`alDepth${i}`, v)
+                      const vals = [
+                        i === 1 ? v : data.alDepth1,
+                        i === 2 ? v : data.alDepth2,
+                        i === 3 ? v : data.alDepth3
+                      ].filter(x => x !== '' && x !== null && x !== undefined && !isNaN(x))
+                      setValue('activeLayerDepth', vals.length ? Math.round(vals.reduce((a, b) => a + Number(b), 0) / vals.length) : '')
+                    }}
+                    style={{ width: '64px', textAlign: 'center', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 8px' }}
+                  />
+                ))}
+                {data.activeLayerDepth !== '' && data.activeLayerDepth !== undefined && (
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>
+                    ∅ {data.activeLayerDepth} cm
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Row: Soil Temp + Soil Moisture % */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className="field-group">
+                <label>Soil Temp °C</label>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={data.activeLayerDepth || ''}
+                  type="number" step="0.1"
+                  value={data.soilTemperature || ''}
                   onChange={(e) => {
                     const value = e.target.value
-                    const validation = validateActiveLayer(value)
-                    setFieldError('activeLayer', validation.valid ? null : validation.message)
-                    setValue('activeLayerDepth', parseFloat(value) || '')
+                    const validation = validateTemperature(value)
+                    setFieldError('soilTemp', validation.valid ? null : validation.message)
+                    setValue('soilTemperature', parseFloat(value) || '')
                   }}
-                  placeholder="Thaw depth"
-                  style={{
-                    minWidth: '80px',
-                    backgroundColor: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    border: errors.activeLayer ? '1px solid #d32f2f' : '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    padding: '10px 12px'
-                  }}
+                  placeholder="°C"
+                  style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: errors.soilTemp ? '1px solid #d32f2f' : '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}
                 />
-                <span style={{ fontWeight: 600, minWidth: '30px' }}>cm</span>
+                {errors.soilTemp && <small style={{ color: '#d32f2f', marginTop: '4px', display: 'block' }}>⚠️ {errors.soilTemp}</small>}
               </div>
-              {errors.activeLayer && (
-                <small style={{ color: '#d32f2f', marginTop: '4px', display: 'block' }}>
-                  ⚠️ {errors.activeLayer}
-                </small>
-              )}
+              <div className="field-group">
+                <label>Soil Moisture %</label>
+                <input
+                  type="number" step="0.1" min="0" max="100"
+                  value={data.soilMoisture || ''}
+                  onChange={(e) => setValue('soilMoisture', e.target.value ? parseFloat(e.target.value) : '')}
+                  placeholder="%"
+                  style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}
+                />
+              </div>
             </div>
+
+            {/* Row: Soil Moisture Type + Standing Water */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className="field-group">
+                <label>Moisture Type</label>
+                <select value={data.soilMoistureType || 'moist'} onChange={(e) => setValue('soilMoistureType', e.target.value)}>
+                  <option value="dry">Dry</option>
+                  <option value="moist">Moist</option>
+                  <option value="wet">Wet</option>
+                  <option value="saturated">Saturated</option>
+                </select>
+              </div>
+              <div className="field-group">
+                <label>Standing Water</label>
+                <select value={data.standingWater ? 'yes' : 'no'} onChange={(e) => setValue('standingWater', e.target.value === 'yes')}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </div>
+            </div>
+
+            {data.standingWater && (
+              <div className="field-group">
+                <label>Standing Water Depth cm</label>
+                <input
+                  type="number" min="0" step="0.5"
+                  value={data.standingWaterDepth || ''}
+                  onChange={(e) => setValue('standingWaterDepth', parseFloat(e.target.value) || '')}
+                  placeholder="Depth"
+                  style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}
+                />
+              </div>
+            )}
 
             <div className="field-group">
               <label>Organic Layer Depth</label>
@@ -128,86 +188,6 @@ export default function SoilProfile({ control, watch, setValue }) {
               )}
             </div>
 
-            <div className="field-group">
-              <label>Soil Temperature</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={data.soilTemperature || ''}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    const validation = validateTemperature(value)
-                    setFieldError('soilTemp', validation.valid ? null : validation.message)
-                    setValue('soilTemperature', parseFloat(value) || '')
-                  }}
-                  placeholder="At measurement depth"
-                  style={{
-                    minWidth: '80px',
-                    backgroundColor: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    border: errors.soilTemp ? '1px solid #d32f2f' : '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    padding: '10px 12px'
-                  }}
-                />
-                <span style={{ fontWeight: 600, minWidth: '40px' }}>°C</span>
-              </div>
-              {errors.soilTemp && (
-                <small style={{ color: '#d32f2f', marginTop: '4px', display: 'block' }}>
-                  ⚠️ {errors.soilTemp}
-                </small>
-              )}
-            </div>
-
-            <div className="field-group">
-              <label>Soil Moisture</label>
-              <select
-                value={data.soilMoisture || 'moist'}
-                onChange={(e) => setValue('soilMoisture', e.target.value)}
-              >
-                <option value="dry">Dry</option>
-                <option value="moist">Moist</option>
-                <option value="wet">Wet</option>
-                <option value="saturated">Saturated</option>
-              </select>
-            </div>
-
-            <div className="field-group">
-              <label>Standing Water Present</label>
-              <select
-                value={data.standingWater ? 'yes' : 'no'}
-                onChange={(e) => setValue('standingWater', e.target.value === 'yes')}
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </div>
-
-            {data.standingWater && (
-              <div className="field-group">
-                <label>Standing Water Depth</label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={data.standingWaterDepth || ''}
-                    onChange={(e) => setValue('standingWaterDepth', parseFloat(e.target.value) || '')}
-                    placeholder="Water depth"
-                    style={{
-                      minWidth: '80px',
-                      backgroundColor: 'var(--bg-primary)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      padding: '10px 12px'
-                    }}
-                  />
-                  <span style={{ fontWeight: 600, minWidth: '30px' }}>cm</span>
-                </div>
-              </div>
-            )}
           </div>
 
           <h3>Soil Layers</h3>

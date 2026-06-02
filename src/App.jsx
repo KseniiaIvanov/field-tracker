@@ -6,6 +6,7 @@ import { useNotificationContext } from './context/NotificationContext'
 import { validateCompleteEntry } from './utils/validators'
 import { processPhoto } from './utils/photoMetadata'
 import { isFileSystemAccessAvailable, requestRootDirectory, getRootDirectory, setRootDirectory, saveSiteToDevice, restoreRootDirectory } from './utils/fileSystemAccess'
+import { discoverAndReadDevice } from './utils/bluetoothManager'
 import ErrorBoundary from './components/ErrorBoundary'
 import QuickEntry from './components/QuickEntry'
 import PointInfo from './components/PointInfo'
@@ -60,6 +61,9 @@ function App() {
   const [deviceStoragePath, setDeviceStoragePath] = useState(null)
   const [storageReady, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
+  const [bluetoothReading, setBluetoothReading] = useState(false)
+  const [bluetoothError, setBluetoothError] = useState(null)
+  const [bluetoothDeviceName, setBluetoothDeviceName] = useState(null)
 
   const WIZARD_STEPS = [
     { num: 1, name: 'Site Information', component: 'PointInfo' },
@@ -105,6 +109,7 @@ function App() {
       alDepth3: '',
       standingWater: false,
       standingWaterDepth: '',
+      soilMoistureType: 'moist',
       terrestrialAquatic: 'terrestrial',
       shadowExperimentNetting: '0',
       carbonFluxMeasurement: false,
@@ -181,7 +186,7 @@ function App() {
           // Try to restore handle from IndexedDB
           const handle = await restoreRootDirectory()
           if (handle) {
-            setDeviceStoragePath('📁 Storage folder restored')
+            setDeviceStoragePath(`📁 ${handle.name}`)
             setRootDirectory(handle)
             console.log('✅ Storage folder restored from previous session')
           } else {
@@ -237,6 +242,30 @@ function App() {
 
     return () => clearInterval(interval)
   }, [gpsAveraging, setValue, showSuccess])
+
+  // Bluetooth sensor reading handler
+  const startBluetoothRead = async () => {
+    setBluetoothReading(true)
+    setBluetoothError(null)
+    try {
+      const result = await discoverAndReadDevice()
+      if (result.success) {
+        setValue('weather.temperature', result.temperature)
+        setValue('weather.humidity', result.humidity)
+        setBluetoothDeviceName('Sensor')
+        showSuccess(`✅ Sensor read: ${result.temperature}°C, ${result.humidity}%`)
+      } else {
+        setBluetoothError(result.error)
+      }
+    } catch (err) {
+      setBluetoothError('❌ Unexpected error. Try again.')
+      console.error('Bluetooth read error:', err)
+    } finally {
+      setBluetoothReading(false)
+      // Auto-clear error after 5 seconds
+      setTimeout(() => setBluetoothError(null), 5000)
+    }
+  }
 
   // Autosave draft 10s after last change (photos excluded to stay within localStorage 5MB limit)
   useEffect(() => {
@@ -308,7 +337,7 @@ function App() {
     try {
       const dirHandle = await requestRootDirectory()
       setRootDirectory(dirHandle)
-      setDeviceStoragePath(`📁 Storage folder selected`)
+      setDeviceStoragePath(`📁 ${dirHandle.name}`)
       localStorage.setItem('field-diary-storage-path', 'selected')
       showSuccess('✅ Storage folder selected. Sites will now save directly to your device.')
     } catch (error) {
@@ -452,18 +481,18 @@ function App() {
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
                   backgroundColor: 'white',
-                  padding: '40px 60px',
+                  padding: '24px 40px',
                   borderRadius: '16px',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
                   textAlign: 'center',
                   zIndex: 1000,
                   animation: 'fadeInOut 2s ease-in-out'
                 }}>
-                  <div style={{ fontSize: '64px', marginBottom: '12px' }}>✅</div>
-                  <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '36px', marginBottom: '8px' }}>✅</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>
                     Site {formData.siteNumber} saved!
                   </div>
-                  <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     Ready for next point
                   </div>
                 </div>
@@ -481,17 +510,17 @@ function App() {
               ) : (
                 <>
                   {/* TOP: Home + Quick/Copy buttons (smaller, secondary) */}
-                  <div style={{ paddingTop: '70px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                    <button className="btn-back" onClick={() => { setCurrentPage('home'); setCurrentStep(1); }} style={{ padding: '6px 12px', fontSize: '12px', minHeight: '30px', whiteSpace: 'nowrap', fontWeight: '600' }}>← Home</button>
+                  <div style={{ paddingTop: 'calc(env(safe-area-inset-top, 20px) + 56px)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <button className="btn-back" onClick={() => { setCurrentPage('home'); setCurrentStep(1); }} style={{ padding: '6px 6px', fontSize: '11px', minHeight: '32px', whiteSpace: 'nowrap', fontWeight: '600' }}>← Home</button>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {currentStep === 1 && (
                         <button
                           onClick={() => setQuickMode(true)}
-                          style={{ padding: '6px 14px', fontSize: '12px', minHeight: '30px', whiteSpace: 'nowrap', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
+                          style={{ padding: '11px 18px', fontSize: '15px', minHeight: '42px', whiteSpace: 'nowrap', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}
                         >⚡ Quick</button>
                       )}
                       {allEntries.length > 0 && (
-                        <button className="btn-copy-previous" onClick={copyFromPrevious} style={{ padding: '6px 12px', fontSize: '12px', minHeight: '30px', whiteSpace: 'nowrap', fontWeight: '600' }}>
+                        <button className="btn-copy-previous" onClick={copyFromPrevious} style={{ padding: '6px 12px', fontSize: '12px', minHeight: '32px', whiteSpace: 'nowrap', fontWeight: '600', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer' }}>
                           📋 Copy
                         </button>
                       )}
@@ -538,11 +567,12 @@ function App() {
 
               {/* WIZARD STEPS */}
               <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} gpsAveraging={gpsAveraging} setGpsAveraging={setGpsAveraging} />}
-                {currentStep === 2 && <Weather control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} />}
+                {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} gpsAveraging={gpsAveraging} setGpsAveraging={setGpsAveraging} bluetoothReading={bluetoothReading} bluetoothError={bluetoothError} startBluetoothRead={startBluetoothRead} />}
+                {currentStep === 2 && <Weather control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} bluetoothReading={bluetoothReading} bluetoothError={bluetoothError} startBluetoothRead={startBluetoothRead} />}
                 {currentStep === 3 && (
                   <div>
-                    <div className="section">
+                    <VegetationShort control={control} watch={watch} setValue={setValue} />
+                    <div className="section" style={{ marginTop: '16px' }}>
                       <div className="section-content" style={{ paddingTop: '12px' }}>
                         <div className="field-group">
                           <label>Environment</label>
@@ -553,7 +583,6 @@ function App() {
                         </div>
                       </div>
                     </div>
-                    <VegetationShort control={control} watch={watch} setValue={setValue} />
                   </div>
                 )}
                 {currentStep === 4 && (
@@ -565,42 +594,37 @@ function App() {
                 {currentStep === 5 && (
                   <div className="section">
                     <div className="section-header"><h2>Review & Save</h2></div>
-                    <div className="section-content">
-                      <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                        ✓ All data ready. Click "Save Entry" to complete this site.
-                      </p>
+                    <div className="section-content" style={{ paddingTop: '10px' }}>
 
-                      <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid var(--border-color)' }}>
-                        <h3 style={{ marginBottom: '12px' }}>Entry Photos</h3>
-                        <div style={{ marginBottom: '12px' }}>
-                          <label style={{ display: 'inline-block', padding: '10px 16px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
-                            📷 Add Photos
-                            <input
-                              type="file"
-                              multiple
-                              accept="image/*"
-                              onChange={handleEntryPhotoUpload}
-                              style={{ display: 'none' }}
-                            />
-                          </label>
-                        </div>
-
-                        {formData.entryPhotos && formData.entryPhotos.length > 0 && (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px' }}>
-                            {formData.entryPhotos.map((photo) => (
-                              <div key={photo.id} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--bg-secondary)' }}>
-                                <img src={photo.previewData || photo.originalData || photo.data} alt={photo.name} style={{ width: '100%', height: '100px', objectFit: 'cover' }} title={photo.metadata ? `${photo.metadata.fileSize} bytes • ${photo.metadata.fileName}` : photo.name} />
-                                <button
-                                  onClick={() => removeEntryPhoto(photo.id)}
-                                  style={{ position: 'absolute', top: '4px', right: '4px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                      {/* Top row: Camera | Gallery | Save */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 6px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: '600', fontSize: '14px', gap: '4px' }}>
+                          📸 Camera
+                          <input type="file" accept="image/*" capture="environment" onChange={handleEntryPhotoUpload} style={{ display: 'none' }} />
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 6px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: '600', fontSize: '14px', gap: '4px' }}>
+                          📷 Gallery
+                          <input type="file" multiple accept="image/*" onChange={handleEntryPhotoUpload} style={{ display: 'none' }} />
+                        </label>
+                        <button
+                          onClick={saveEntry}
+                          style={{ padding: '14px 6px', background: 'linear-gradient(135deg, var(--success-color) 0%, #1b4332 100%)', color: 'white', border: 'none', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: '700', fontSize: '14px' }}
+                        >
+                          💾 Save Entry
+                        </button>
                       </div>
+
+                      {/* Photo thumbnails */}
+                      {formData.entryPhotos && formData.entryPhotos.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '8px', marginBottom: '10px' }}>
+                          {formData.entryPhotos.map((photo) => (
+                            <div key={photo.id} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden' }}>
+                              <img src={photo.previewData || photo.originalData || photo.data} alt={photo.name} style={{ width: '100%', height: '80px', objectFit: 'cover' }} />
+                              <button onClick={() => removeEntryPhoto(photo.id)} style={{ position: 'absolute', top: '2px', right: '2px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '12px', padding: 0, lineHeight: '20px', textAlign: 'center' }}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
                       <Export entries={allEntries} />
                     </div>

@@ -75,7 +75,7 @@ export default function Home({ setCurrentPage, allEntries, onSelectStorageFolder
     : 'N/A'
 
   return (
-    <div className="home-page" style={{ paddingTop: '70px' }}>
+    <div className="home-page" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>
       {storageAvailable && !deviceStoragePath && (
         <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#e3f2fd', borderRadius: '8px', border: '2px solid #1976d2' }}>
           <div style={{ marginBottom: '8px', fontWeight: '700', color: '#1565c0' }}>
@@ -103,8 +103,15 @@ export default function Home({ setCurrentPage, allEntries, onSelectStorageFolder
       )}
 
       {deviceStoragePath && (
-        <div style={{ marginBottom: '24px', padding: '12px 16px', backgroundColor: '#e8f5e9', borderRadius: '8px', border: '2px solid #388e3c', fontSize: '13px', color: '#1b5e20' }}>
-          ✅ {deviceStoragePath} - Every Site saves directly to your device
+        <div style={{ marginBottom: '24px', padding: '12px 16px', backgroundColor: '#e8f5e9', borderRadius: '8px', border: '2px solid #388e3c', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: '#1b5e20' }}>✅ {deviceStoragePath}</div>
+            <div style={{ fontSize: '11px', color: '#2e7d32', marginTop: '2px' }}>Sites save directly to this folder</div>
+          </div>
+          <button
+            onClick={onSelectStorageFolder}
+            style={{ flexShrink: 0, padding: '4px 10px', fontSize: '11px', backgroundColor: 'transparent', color: '#1b5e20', border: '1px solid #388e3c', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
+          >Change</button>
         </div>
       )}
 

@@ -106,80 +106,53 @@ export default function Export({ entries }) {
   }
 
   return (
-    <div className="export-section">
-      <h3>Export Data</h3>
-      <div className="export-buttons">
+    <div style={{ marginTop: '8px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
+        {entries.length > 0 ? `${entries.length} entries saved` : 'No entries yet'}
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
         <button
-          className="btn-export"
           onClick={exportOrganizedZip}
           disabled={isExporting}
-          title="Download organized backup: Field_Diary_YYYY-MM-DD.zip with folders: Date/Site_###/photos, voice_notes"
-          style={{ fontWeight: '700', backgroundColor: isExporting ? '#ccc' : '#2d6a4f', color: 'white' }}
+          style={{ padding: '10px 8px', fontWeight: '700', backgroundColor: isExporting ? '#ccc' : '#2d6a4f', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}
         >
-          {isExporting ? '⏳ Organizing...' : '📦 Backup (Organized ZIP)'}
+          {isExporting ? '⏳ Packing...' : '📦 Backup ZIP'}
         </button>
         <button
-          className="btn-export"
           onClick={exportToCSV}
-          title="Export entries as CSV for Excel/spreadsheet analysis"
-          style={{ backgroundColor: '#0066cc', color: 'white' }}
+          style={{ padding: '10px 8px', backgroundColor: '#0066cc', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
         >
-          📊 Export to CSV
+          📊 CSV
         </button>
         <button
-          className="btn-export"
           onClick={exportToJSON}
-          title="Export entries as JSON for R/Python analysis"
-          style={{ backgroundColor: '#0066cc', color: 'white' }}
+          style={{ padding: '10px 8px', backgroundColor: '#0066cc', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
         >
-          📋 Export All JSON
+          📋 All JSON
         </button>
         <button
-          className="btn-export"
           onClick={() => setExpandIndividual(!expandIndividual)}
-          title="Download each entry as a separate JSON file"
-          style={{ backgroundColor: '#6750a4', color: 'white' }}
+          style={{ padding: '10px 8px', backgroundColor: '#6750a4', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
         >
-          📁 Individual Files ({entries.length})
+          📁 Files ({entries.length})
         </button>
       </div>
 
       {expandIndividual && entries.length > 0 && (
-        <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-          <p style={{ marginTop: 0, marginBottom: '8px', fontWeight: 600 }}>Download individual entries:</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
+        <div style={{ marginTop: '8px', padding: '10px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
             {entries.map((entry, index) => (
               <button
                 key={index}
                 onClick={() => exportIndividualEntry(entry, index)}
-                style={{
-                  padding: '8px 12px',
-                  backgroundColor: '#6750a4',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  textAlign: 'left'
-                }}
+                style={{ padding: '7px 10px', backgroundColor: '#6750a4', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}
               >
-                Site {entry.siteNumber} - {entry.date}
+                Site {entry.siteNumber} · {entry.date}
               </button>
             ))}
           </div>
         </div>
       )}
-
-      <p className="export-info">
-        {entries.length > 0 ? (
-          <>
-            <strong>📦 Organized Backup</strong> creates: <code>Field_Diary_YYYY-MM-DD/→ Date/ → Site_###/</code> with all photos & voice notes<br />
-            {entries.length} entries ready to export • CSV for analysis • JSON for archiving
-          </>
-        ) : (
-          'Complete and save entries to enable export'
-        )}
-      </p>
     </div>
   )
 }

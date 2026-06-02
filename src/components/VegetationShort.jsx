@@ -71,7 +71,7 @@ export default function VegetationShort({ control, watch, setValue }) {
         <div className="section-content">
           <div style={{ fontSize: '11px', color: '#999', marginBottom: '8px', display: 'flex', gap: '8px' }}>
             <span style={{ flex: 1 }}></span>
-            <span style={{ width: '90px', textAlign: 'center' }}>Coverage</span>
+            <span style={{ width: '90px', textAlign: 'center' }}>0 · 1 · 2</span>
             <span style={{ width: '55px', textAlign: 'center' }}>cm</span>
             <span style={{ width: '20px' }}></span>
           </div>
@@ -79,15 +79,25 @@ export default function VegetationShort({ control, watch, setValue }) {
           {Object.keys(shortVegData).map((category) => (
             <div key={category} style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '5px', padding: '5px 8px', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px' }}>
               <div style={{ flex: 1, fontSize: '13px', fontWeight: '500' }}>{category}</div>
-              <select
-                value={shortVegData[category]?.coverage ?? 0}
-                onChange={(e) => updateVegetation(category, 'coverage', parseInt(e.target.value))}
-                style={{ width: '90px', padding: '4px 4px', fontSize: '12px', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-              >
-                <option value="0">0 Absent</option>
-                <option value="1">1 Present</option>
-                <option value="2">2 Dominant</option>
-              </select>
+              <div style={{ display: 'flex', gap: '3px' }}>
+                {[0, 1, 2].map(v => {
+                  const active = (shortVegData[category]?.coverage ?? 0) === v
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => updateVegetation(category, 'coverage', v)}
+                      style={{
+                        width: '28px', height: '28px', flexShrink: 0,
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '6px', fontSize: '12px', fontWeight: '700',
+                        cursor: 'pointer',
+                        backgroundColor: active ? 'var(--primary-color)' : 'var(--bg-primary)',
+                        color: active ? 'white' : 'var(--text-secondary)'
+                      }}
+                    >{v}</button>
+                  )
+                })}
+              </div>
               <input
                 type="number"
                 min="0"
@@ -145,7 +155,11 @@ export default function VegetationShort({ control, watch, setValue }) {
 
           <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <label style={{ display: 'inline-block', padding: '6px 14px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
-              📷 Photos
+              📸 Camera
+              <input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+            </label>
+            <label style={{ display: 'inline-block', padding: '6px 14px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
+              📷 Gallery
               <input type="file" multiple accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
             </label>
             {vegPhotos.map((photo) => (

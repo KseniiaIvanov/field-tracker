@@ -6,7 +6,7 @@ const LANDSCAPE_DEFAULTS = ['RTS', 'Polygon', 'Trench', 'Shore', 'Pond', 'Hummoc
 const DISTURBANCE_DEFAULTS = ['None', 'Thermokarst', 'Erosion', 'Trampling', 'Slump', 'Other']
 const ORGANIC_MATTER_TYPES = ['Live vegetation', 'Litter', 'Peat', 'Mixed']
 
-export default function PointInfo({ control, watch, setValue, previousEntry, gpsAveraging, setGpsAveraging }) {
+export default function PointInfo({ control, watch, setValue, previousEntry, gpsAveraging, setGpsAveraging, bluetoothReading, bluetoothError, startBluetoothRead }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [landscapeSuggestions, setLandscapeSuggestions] = useState([])
   const [allLandscapes, setAllLandscapes] = useState(LANDSCAPE_DEFAULTS)
@@ -319,42 +319,49 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
           onClick={() => setIsExpanded(!isExpanded)}
           style={{ flex: 1 }}
         >
-          <h2>Site Information</h2>
+          <h2>Site Info</h2>
           <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
         </button>
-        {previousEntry && (
-          <button onClick={copyPointInfoFromPrevious} className="copy-button" style={{ margin: '10px 12px', marginLeft: '0' }}>
-            📋 Copy
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {previousEntry && (
+            <button onClick={copyPointInfoFromPrevious} className="copy-button" style={{ padding: '8px 12px', fontSize: '12px' }}>
+              📋 Copy
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={gpsAveraging ? stopGPSAveraging : startGPSAveraging}
+            style={{ padding: '8px 12px', backgroundColor: gpsAveraging ? '#ff6b6b' : 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '12px' }}
+          >
+            📍 {gpsAveraging ? `Stop (${Math.round((Date.now() - gpsAveraging.startTime) / 1000)}s)` : 'Get GPS'}
           </button>
-        )}
+        </div>
       </div>
 
       {isExpanded && (
         <div className="section-content">
 
-          {/* ROW 1: Site Number */}
-          <div className="field-group">
-            <label>Site #</label>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <button onClick={decrementSite} style={{ padding: '8px 12px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>−</button>
-              <input
-                type="number"
-                value={data.siteNumber || 1}
-                onChange={(e) => {
-                  const value = e.target.value
-                  const validation = validateSiteNumber(value)
-                  setFieldError('siteNumber', validation.valid ? null : validation.message)
-                  setValue('siteNumber', parseInt(value) || 1)
-                }}
-                min="1" max="999"
-                style={{ width: '80px', textAlign: 'center', fontWeight: '700', padding: '8px', fontSize: '16px', color: '#1a1a1a', backgroundColor: '#fff', border: errors.siteNumber ? '1px solid #d32f2f' : '1px solid #ddd', borderRadius: '6px' }}
-              />
-              <button onClick={incrementSite} style={{ padding: '8px 12px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>+</button>
+          {/* ROW 1: Site # + Date + Time (3 columns, 1 row) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '8px', alignItems: 'end' }}>
+            <div className="field-group">
+              <label>Site #</label>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <button onClick={decrementSite} style={{ padding: '8px 10px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>−</button>
+                <input
+                  type="number"
+                  value={data.siteNumber || 1}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    const validation = validateSiteNumber(value)
+                    setFieldError('siteNumber', validation.valid ? null : validation.message)
+                    setValue('siteNumber', parseInt(value) || 1)
+                  }}
+                  min="1" max="999"
+                  style={{ width: '52px', textAlign: 'center', fontWeight: '700', padding: '8px', fontSize: '16px', color: '#1a1a1a', backgroundColor: '#fff', border: errors.siteNumber ? '1px solid #d32f2f' : '1px solid #ddd', borderRadius: '6px' }}
+                />
+                <button onClick={incrementSite} style={{ padding: '8px 10px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>+</button>
+              </div>
             </div>
-          </div>
-
-          {/* ROW 2: Date + Time */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <div className="field-group">
               <label>Date</label>
               <input type="date" value={data.date} onChange={(e) => setValue('date', e.target.value)} />
@@ -365,23 +372,6 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             </div>
           </div>
 
-          {/* ROW 3: GPS buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={gpsAveraging ? stopGPSAveraging : startGPSAveraging}
-              style={{ flex: 1, padding: '10px', backgroundColor: gpsAveraging ? '#ff6b6b' : 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
-            >
-              📍 {gpsAveraging ? `Stop GPS (${Math.round((Date.now() - gpsAveraging.startTime) / 1000)}s)` : 'Get GPS'}
-            </button>
-            <button
-              type="button"
-              onClick={copyCoordinatesFromClipboard}
-              style={{ padding: '10px 14px', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', fontSize: '13px' }}
-            >
-              📋 Paste
-            </button>
-          </div>
 
           {gpsAveraging && (
             <div style={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', overflow: 'hidden' }}>
@@ -435,66 +425,28 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             </div>
           </div>
 
-          {/* ROW 6: Disturbances */}
-          <div className="field-group">
-            <label>Disturbances</label>
-            <input
-              type="text"
-              value={data.disturbance || ''}
-              onChange={(e) => setValue('disturbance', e.target.value)}
-              maxLength="60"
-            />
-          </div>
-
-          {/* ROW 6.5: AL Depth (3 readings) + Standing Water */}
-          <div className="field-group">
-            <label>AL Depth cm</label>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-              {[1, 2, 3].map(i => (
-                <input
-                  key={i}
-                  type="number" min="0" step="1"
-                  value={data[`alDepth${i}`] ?? ''}
-                  placeholder={`#${i}`}
-                  onChange={(e) => {
-                    const v = e.target.value === '' ? '' : parseFloat(e.target.value)
-                    setValue(`alDepth${i}`, v)
-                    const vals = [
-                      i === 1 ? v : data.alDepth1,
-                      i === 2 ? v : data.alDepth2,
-                      i === 3 ? v : data.alDepth3
-                    ].filter(x => x !== '' && x !== null && x !== undefined && !isNaN(x))
-                    setValue('activeLayerDepth', vals.length ? Math.round(vals.reduce((a, b) => a + Number(b), 0) / vals.length) : '')
-                  }}
-                  style={{ width: '64px', textAlign: 'center' }}
-                />
-              ))}
-              {data.activeLayerDepth !== '' && data.activeLayerDepth !== undefined && (
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--primary-color)', whiteSpace: 'nowrap' }}>
-                  ∅ {data.activeLayerDepth} cm
-                </span>
-              )}
+          {/* ROW 6: Disturbances + Notes (2 columns, 1 row) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="field-group">
+              <label>Disturbances</label>
+              <input
+                type="text"
+                value={data.disturbance || ''}
+                onChange={(e) => setValue('disturbance', e.target.value)}
+                maxLength="60"
+              />
             </div>
-          </div>
 
-          <div className="field-group">
-            <label>Standing Water</label>
-            <select value={data.standingWater ? 'yes' : 'no'} onChange={(e) => setValue('standingWater', e.target.value === 'yes')}>
-              <option value="no">No</option>
-              <option value="yes">Yes</option>
-            </select>
-          </div>
-
-          {/* ROW 7: Site Notes */}
-          <div className="field-group">
-            <label>Notes</label>
-            <textarea
-              value={data.notes || ''}
-              onChange={(e) => setValue('notes', e.target.value)}
-              placeholder="Observations, conditions, features..."
-              rows="2"
-              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-            />
+            <div className="field-group">
+              <label>Notes</label>
+              <textarea
+                value={data.notes || ''}
+                onChange={(e) => setValue('notes', e.target.value)}
+                placeholder="Observations, conditions, features..."
+                rows="2"
+                style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 12px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
           </div>
 
           {/* ROW 8: Photo + Voice in one row */}
@@ -502,8 +454,20 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
             <div className="field-group">
               <label>📷 Photo</label>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <label style={{ display: 'inline-block', padding: '8px 12px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
-                  + Add
+                <label style={{ display: 'inline-block', padding: '8px 10px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
+                  📸
+                  <input type="file" accept="image/*" capture="environment" onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const reader = new FileReader()
+                      reader.onloadend = () => setValue('entryPhotos', [...(data.entryPhotos || []), { id: Date.now(), originalData: reader.result, previewData: reader.result, name: file.name, type: file.type }])
+                      reader.readAsDataURL(file)
+                    }
+                    e.target.value = ''
+                  }} style={{ display: 'none' }} />
+                </label>
+                <label style={{ display: 'inline-block', padding: '8px 10px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px', flexShrink: 0 }}>
+                  📷
                   <input type="file" accept="image/*" onChange={(e) => {
                     const file = e.target.files?.[0]
                     if (file) {
@@ -571,32 +535,24 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
               </div>
             </div>
 
-            {/* Collector + Soil in 2 cols */}
+            {/* Collector + Coord photo */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
               <div className="field-group">
                 <label>Collector</label>
                 <input type="text" placeholder="Your name" value={data.collector || ''} onChange={(e) => setValue('collector', e.target.value)} />
               </div>
               <div className="field-group">
-                <label>Soil Moisture %</label>
-                <input type="number" step="0.1" min="0" max="100" value={data.soilMoisture || ''} onChange={(e) => setValue('soilMoisture', e.target.value ? parseFloat(e.target.value) : '')} />
-              </div>
-            </div>
-
-            {/* Soil Temp + Photo for coords */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-              <div className="field-group">
-                <label>Soil Temp °C</label>
-                <input type="number" step="0.1" value={data.soilTemperature || ''} onChange={(e) => setValue('soilTemperature', e.target.value ? parseFloat(e.target.value) : '')} />
-              </div>
-              <div className="field-group">
                 <label>📸 Coord Photo</label>
-                <div>
-                  <label style={{ display: 'inline-block', padding: '8px 12px', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
-                    Upload
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'inline-block', padding: '8px 10px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                    📸
+                    <input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                  </label>
+                  <label style={{ display: 'inline-block', padding: '8px 10px', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                    📷
                     <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
                   </label>
-                  {photoMessage && <small style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: photoMessage.includes('✓') ? '#2e7d32' : '#c62828' }}>{photoMessage}</small>}
+                  {photoMessage && <small style={{ display: 'block', width: '100%', marginTop: '4px', fontSize: '11px', color: photoMessage.includes('✓') ? '#2e7d32' : '#c62828' }}>{photoMessage}</small>}
                 </div>
               </div>
             </div>

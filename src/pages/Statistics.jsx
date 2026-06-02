@@ -209,16 +209,13 @@ export default function Statistics({ setCurrentPage, allEntries }) {
 const PARAMETERS = [
   { key: 'landscape',              label: 'Landscape',         type: 'categorical' },
   { key: 'disturbance',            label: 'Disturbance',       type: 'categorical' },
-  { key: 'soilMoisture',           label: 'Soil Moisture',     type: 'categorical' },
-  { key: 'terrestrialAquatic',     label: 'Environment',       type: 'categorical' },
-  { key: 'organicMatterType',      label: 'Organic Matter',    type: 'categorical' },
+  { key: 'soilMoistureType',        label: 'Moisture Type',     type: 'categorical' },
   { key: 'standingWater',          label: 'Standing Water',    type: 'boolean' },
-  { key: 'carbonFluxMeasurement',  label: 'Carbon Flux',       type: 'boolean' },
-  { key: 'weather.cloudCover',     label: 'Cloud Cover',       type: 'numeric', unit: '%',   bins: 10 },
-  { key: 'weather.temperature',    label: 'Air Temperature',   type: 'numeric', unit: '°C',  bins: 8  },
-  { key: 'weather.windSpeed',      label: 'Wind Speed',        type: 'numeric', unit: 'm/s', bins: 7  },
-  { key: 'activeLayerDepth',       label: 'AL Depth',          type: 'numeric', unit: 'cm',  bins: 8  },
-  { key: 'soilTemperature',        label: 'Soil Temperature',  type: 'numeric', unit: '°C',  bins: 8  },
+  { key: 'weather.cloudCover',     label: 'Cloud Cover',       type: 'numeric', unit: '%',   bins: 10, validRange: [0, 100]   },
+  { key: 'weather.temperature',    label: 'Air Temperature',   type: 'numeric', unit: '°C',  bins: 8,  validRange: [-80, 60]  },
+  { key: 'activeLayerDepth',       label: 'AL Depth',          type: 'numeric', unit: 'cm',  bins: 8,  validRange: [0, 300]   },
+  { key: 'soilTemperature',        label: 'Soil Temperature',  type: 'numeric', unit: '°C',  bins: 8,  validRange: [-60, 60]  },
+  { key: 'soilMoisture',           label: 'Soil Moisture',     type: 'numeric', unit: '%',   bins: 10, validRange: [0, 100]   },
 ]
 
 function getNestedValue(obj, key) {
@@ -251,9 +248,15 @@ function ParameterDistributions({ entries }) {
     }
 
     // numeric
-    const raw = entries
+    const parsed = entries
       .map(e => parseFloat(getNestedValue(e, param.key)))
       .filter(v => isFinite(v))
+
+    // Apply valid range — remove sensor errors / NA-coded values
+    const [rangeMin, rangeMax] = param.validRange || [-Infinity, Infinity]
+    const raw = parsed.filter(v => v >= rangeMin && v <= rangeMax)
+    const excluded = parsed.length - raw.length
+
     if (!raw.length) return null
 
     const min = Math.min(...raw)
@@ -272,7 +275,7 @@ function ParameterDistributions({ entries }) {
       const idx = Math.min(Math.floor((v - min) / binSize), binCount - 1)
       bins[idx].count++
     })
-    return { type: 'numeric', bars: bins, mean, std, min, max, n: raw.length, unit: param.unit }
+    return { type: 'numeric', bars: bins, mean, std, min, max, n: raw.length, unit: param.unit, excluded, validRange: param.validRange }
   }, [entries, selectedKey])
 
   const BAR_COLOR = '#4a90d9'
@@ -286,9 +289,11 @@ function ParameterDistributions({ entries }) {
     if (!chartData) return <p style={{ color: 'var(--text-secondary)', padding: '16px 0' }}>No data for this parameter yet.</p>
 
     const bars = chartData.bars
+    const isHistogram = chartData.type === 'numeric'
     const maxCount = Math.max(...bars.map(b => b.count), 1)
     const barW = CW / bars.length
-    const gap = Math.max(2, barW * 0.15)
+    // Histogram: bars touch (continuous bins). Categorical: keep a visible gap between bars.
+    const gap = isHistogram ? 0.5 : Math.max(2, barW * 0.15)
 
     return (
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', maxWidth: '100%' }}>
@@ -316,33 +321,53 @@ function ParameterDistributions({ entries }) {
           const bx = PAD.left + i * barW + gap / 2
           const by = PAD.top + CH - bh
           const bw = barW - gap
-          const labelX = bx + bw / 2
-          const maxLabelLen = Math.floor(bw / 5.5)
-          const label = bar.label.length > maxLabelLen ? bar.label.slice(0, maxLabelLen - 1) + '…' : bar.label
 
           return (
             <g key={i}>
               <rect x={bx} y={by} width={bw} height={bh || 1}
-                fill={BAR_COLOR} rx="2" opacity="0.85" />
+                fill={BAR_COLOR} rx={isHistogram ? 0 : 2} opacity="0.85" />
               {bar.count > 0 && (
-                <text x={labelX} y={by - 3} textAnchor="middle" fontSize="9" fill="#555" fontWeight="600">
+                <text x={bx + bw / 2} y={by - 3} textAnchor="middle" fontSize="9" fill="#555" fontWeight="600">
                   {bar.count}
                 </text>
               )}
-              <text x={labelX} y={PAD.top + CH + 13} textAnchor="middle" fontSize="8.5" fill="#666">
-                {label}
-              </text>
-              {chartData.type === 'numeric' && (
-                <text x={labelX} y={PAD.top + CH + 24} textAnchor="middle" fontSize="7.5" fill="#aaa">
-                  {bar.label}
-                </text>
-              )}
+              {/* Categorical: one label centered under each bar */}
+              {!isHistogram && (() => {
+                const maxLabelLen = Math.floor(bw / 5.5)
+                const label = bar.label.length > maxLabelLen ? bar.label.slice(0, maxLabelLen - 1) + '…' : bar.label
+                return (
+                  <text x={bx + bw / 2} y={PAD.top + CH + 13} textAnchor="middle" fontSize="8.5" fill="#666">
+                    {label}
+                  </text>
+                )
+              })()}
             </g>
           )
         })}
 
+        {/* Histogram: bin-edge tick labels along the x-axis (continuous scale) */}
+        {isHistogram && (() => {
+          const edges = []
+          // first edge of each bar + final upper edge
+          bars.forEach((b, i) => edges.push({ x: PAD.left + i * barW, v: b.from }))
+          edges.push({ x: PAD.left + bars.length * barW, v: bars[bars.length - 1].to })
+          // Show ~6 evenly-spaced edge labels to avoid clutter
+          const everyN = Math.max(1, Math.round(edges.length / 6))
+          return edges.map((e, i) => {
+            if (i % everyN !== 0 && i !== edges.length - 1) return null
+            return (
+              <g key={i}>
+                <line x1={e.x} y1={PAD.top + CH} x2={e.x} y2={PAD.top + CH + 3} stroke="#999" strokeWidth="0.75" />
+                <text x={e.x} y={PAD.top + CH + 13} textAnchor="middle" fontSize="8" fill="#666">
+                  {e.v.toFixed(e.v % 1 === 0 ? 0 : 1)}
+                </text>
+              </g>
+            )
+          })
+        })()}
+
         {/* Mean line for numeric */}
-        {chartData.type === 'numeric' && (() => {
+        {isHistogram && (() => {
           const mx = PAD.left + ((chartData.mean - chartData.min) / (chartData.max - chartData.min || 1)) * CW
           return (
             <line x1={mx} y1={PAD.top} x2={mx} y2={PAD.top + CH}
@@ -387,10 +412,26 @@ function ParameterDistributions({ entries }) {
         {renderChart()}
 
         {chartData?.type === 'numeric' && (
-          <div style={{ display: 'flex', gap: '12px', marginTop: '8px', fontSize: '12px', color: '#888' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '8px', fontSize: '12px', color: '#888' }}>
             <span>min: {chartData.min.toFixed(1)}{param.unit}</span>
             <span>max: {chartData.max.toFixed(1)}{param.unit}</span>
             <span style={{ color: '#e74c3c' }}>— mean</span>
+            {chartData.validRange && (
+              <span style={{ color: '#888' }}>
+                valid: {chartData.validRange[0]}–{chartData.validRange[1]}{param.unit}
+              </span>
+            )}
+            {chartData.excluded > 0 && (
+              <span style={{
+                color: '#c0392b',
+                backgroundColor: 'rgba(192,57,43,0.08)',
+                padding: '1px 6px',
+                borderRadius: '10px',
+                fontWeight: '600'
+              }}>
+                ⚠️ {chartData.excluded} out-of-range excluded
+              </span>
+            )}
           </div>
         )}
       </div>

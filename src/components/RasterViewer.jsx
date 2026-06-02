@@ -71,6 +71,45 @@ const COPPER = [
   [1.0, 0.94, 0.87]
 ]
 
+// Blues color map (Light to Dark Blue) — good for moisture
+const BLUES = [
+  [0.969, 0.984, 1.0],
+  [0.871, 0.922, 0.969],
+  [0.776, 0.859, 0.937],
+  [0.620, 0.792, 0.882],
+  [0.420, 0.682, 0.839],
+  [0.259, 0.573, 0.776],
+  [0.129, 0.443, 0.710],
+  [0.031, 0.318, 0.612],
+  [0.031, 0.188, 0.420]
+]
+
+// Greens color map (Light to Dark Green) — good for vegetation
+const GREENS = [
+  [0.969, 0.988, 0.961],
+  [0.898, 0.961, 0.878],
+  [0.780, 0.914, 0.753],
+  [0.631, 0.851, 0.608],
+  [0.455, 0.769, 0.463],
+  [0.255, 0.671, 0.365],
+  [0.137, 0.545, 0.271],
+  [0.0, 0.427, 0.173],
+  [0.0, 0.267, 0.106]
+]
+
+// Reds color map (Light to Dark Red) — good for disturbance
+const REDS = [
+  [1.0, 0.961, 0.941],
+  [0.996, 0.878, 0.824],
+  [0.988, 0.733, 0.631],
+  [0.988, 0.573, 0.447],
+  [0.984, 0.416, 0.290],
+  [0.937, 0.231, 0.173],
+  [0.796, 0.094, 0.114],
+  [0.647, 0.059, 0.082],
+  [0.404, 0.0, 0.051]
+]
+
 function getColormapByName(name) {
   switch (name) {
     case 'plasma': return PLASMA
@@ -78,6 +117,9 @@ function getColormapByName(name) {
     case 'grayscale': return GRAYSCALE
     case 'copper': return COPPER
     case 'rdylbu': return RDYLBU
+    case 'blues': return BLUES
+    case 'greens': return GREENS
+    case 'reds': return REDS
     case 'viridis':
     default: return VIRIDIS
   }
@@ -115,8 +157,6 @@ function RasterViewerComponent({
   const [rasterCRS, setRasterCRS] = useState('EPSG:4326')
   const [localZoom, setLocalZoom] = useState(1)
   const [localPanOffset, setLocalPanOffset] = useState({ x: 0, y: 0 })
-  const [showDebug, setShowDebug] = useState(false)
-  const [debugInfo, setDebugInfo] = useState(null)
   const [isRGBRaster, setIsRGBRaster] = useState(false)
 
   // Use external zoom if provided (multi-layer), otherwise use local
@@ -892,27 +932,6 @@ function RasterViewerComponent({
       logger.debug("RasterViewer", `Click at pixel (${pixelX.toFixed(0)}, ${pixelY.toFixed(0)}) → coords:`, coords)
       logger.debug("RasterViewer", `  lat=${coords.lat.toFixed(4)}, lon=${coords.lon.toFixed(4)}`)
 
-      // Store debug info for verification
-      if (showDebug) {
-        // Calculate raw coordinates before CRS transform
-        const gt = rasterData.geotransform
-        const rawX = gt[0] + pixelX * gt[1] + pixelY * gt[2]
-        const rawY = gt[3] + pixelX * gt[4] + pixelY * gt[5]
-        const detectedCRS = determineCRS(gt, rasterData.crs)
-
-        setDebugInfo({
-          canvasClickPixel: { x: x.toFixed(1), y: y.toFixed(1) },
-          rasterPixel: { x: pixelX.toFixed(1), y: pixelY.toFixed(1) },
-          canvasSize: { width: rect.width, height: rect.height },
-          rasterSize: { width: rasterData.width, height: rasterData.height },
-          scale: scale.toFixed(4),
-          geotransform: rasterData.geotransform,
-          detectedCRS: detectedCRS,
-          rawNativeCoords: { x: rawX.toFixed(2), y: rawY.toFixed(2) },
-          coordinates: { lat: coords.lat.toFixed(6), lon: coords.lon.toFixed(6) }
-        })
-      }
-
       if (!isFinite(coords.lat) || !isFinite(coords.lon)) {
         logger.error("RasterViewer", 'Invalid coordinates from conversion:', coords)
         alert('Coordinate conversion failed. Check F12 console.')
@@ -936,7 +955,7 @@ function RasterViewerComponent({
       logger.error("RasterViewer", 'Coordinate conversion error:', err)
       alert('Could not convert coordinates. GeoTIFF CRS may not be supported.')
     }
-  }, [isPanning, readOnly, rasterData, showDebug, polygonCoords])
+  }, [isPanning, readOnly, rasterData, polygonCoords])
 
   const handleCanvasDoubleClick = useCallback((e) => {
     if (readOnly || polygonCoords.length < 3) {
@@ -1122,6 +1141,9 @@ function RasterViewerComponent({
                 zIndex: 10
               }}
             >
+              <option value="blues">🎨 Blues (Moisture)</option>
+              <option value="greens">🎨 Greens (Vegetation)</option>
+              <option value="reds">🎨 Reds (Disturbance)</option>
               <option value="viridis">🎨 Viridis (Purple-Green-Yellow)</option>
               <option value="plasma">🎨 Plasma (Purple-Pink-Yellow)</option>
               <option value="inferno">🎨 Inferno (Black-Red-Yellow)</option>
@@ -1150,23 +1172,6 @@ function RasterViewerComponent({
               📍 {showRasterCRS ? rasterCRS : 'Lat/Lon'}
             </button>
           )}
-          <button
-            onClick={() => setShowDebug(!showDebug)}
-            title="Enable debug mode to verify coordinate alignment"
-            style={{
-              padding: '8px 12px',
-              backgroundColor: showDebug ? '#FF9800' : '#e8e8e8',
-              color: showDebug ? 'white' : '#222',
-              border: `2px solid ${showDebug ? '#F57C00' : '#ddd'}`,
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: '600',
-              transition: 'all 0.2s'
-            }}
-          >
-            🔍 {showDebug ? 'Debug ON' : 'Debug OFF'}
-          </button>
         </div>
       </div>
 
@@ -1262,52 +1267,6 @@ function RasterViewerComponent({
       </div>
 
       {/* Data Statistics */}
-
-      {/* Debug Information */}
-      {showDebug && debugInfo && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: 'rgba(255, 152, 0, 0.05)',
-          border: '2px solid #FF9800',
-          borderRadius: '6px',
-          marginBottom: '12px',
-          fontSize: '11px',
-          fontFamily: 'monospace',
-          color: 'var(--text-secondary)'
-        }}>
-          <strong style={{ color: '#F57C00' }}>🔍 Coordinate Debug Info (Last Click)</strong>
-          <div style={{ marginTop: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <div><strong>Canvas click:</strong> ({debugInfo.canvasClickPixel.x}, {debugInfo.canvasClickPixel.y})</div>
-            <div><strong>Raster pixel:</strong> ({debugInfo.rasterPixel.x}, {debugInfo.rasterPixel.y})</div>
-            <div><strong>Scale factor:</strong> {debugInfo.scale}</div>
-            <div><strong>CRS detected:</strong> {debugInfo.detectedCRS}</div>
-            <div><strong>Canvas size:</strong> {debugInfo.canvasSize.width}×{debugInfo.canvasSize.height}px</div>
-            <div><strong>Raster size:</strong> {debugInfo.rasterSize.width}×{debugInfo.rasterSize.height}px</div>
-            <div style={{ gridColumn: '1 / -1', padding: '8px', backgroundColor: 'rgba(255, 193, 7, 0.05)', borderRadius: '4px' }}>
-              <strong>Transform chain:</strong>
-              <div>1. Pixel ({debugInfo.rasterPixel.x}, {debugInfo.rasterPixel.y})</div>
-              <div>2. Native CRS: ({debugInfo.rawNativeCoords.x}, {debugInfo.rawNativeCoords.y}) [{debugInfo.detectedCRS}]</div>
-              <div>3. WGS84: lat={debugInfo.coordinates.lat}, lon={debugInfo.coordinates.lon}</div>
-            </div>
-            <div style={{ gridColumn: '1 / -1', fontSize: '10px', color: '#999' }}>
-              <strong>Geotransform:</strong>
-              <div>[{debugInfo.geotransform?.map((v, i) => {
-                if (v === undefined || v === null) return 'undefined'
-                if (typeof v !== 'number') return String(v)
-                return i === 0 || i === 3 ? v.toFixed(0) : v.toFixed(4)
-              }).join(', ')}]</div>
-              <div style={{ marginTop: '4px' }}>Format: [originX, pixelWidth, rotX, originY, rotY, -pixelHeight]</div>
-            </div>
-          </div>
-          <div style={{ marginTop: '8px', padding: '8px', backgroundColor: 'rgba(255, 193, 7, 0.1)', borderRadius: '4px', color: '#F57C00', fontSize: '10px' }}>
-            💡 <strong>Verification steps:</strong><br/>
-            1. Click same point in QGIS and here<br/>
-            2. Compare "Native CRS" coords - they should match UTM easting/northing<br/>
-            3. Compare final WGS84 lat/lon
-          </div>
-        </div>
-      )}
-
 
     </div>
   )

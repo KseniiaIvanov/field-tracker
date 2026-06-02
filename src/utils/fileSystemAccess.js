@@ -13,7 +13,13 @@ export async function restoreRootDirectory() {
 
   try {
     const db = await new Promise((resolve, reject) => {
-      const request = indexedDB.open('field-diary-storage', 1)
+      const request = indexedDB.open('field-diary-storage', 2)
+      request.onupgradeneeded = (e) => {
+        const database = e.target.result
+        if (!database.objectStoreNames.contains('directory-handle')) {
+          database.createObjectStore('directory-handle')
+        }
+      }
       request.onsuccess = () => resolve(request.result)
       request.onerror = () => reject(request.error)
     })
@@ -49,7 +55,7 @@ export async function restoreRootDirectory() {
 async function saveHandleToDb(handle) {
   try {
     const db = await new Promise((resolve, reject) => {
-      const request = indexedDB.open('field-diary-storage', 1)
+      const request = indexedDB.open('field-diary-storage', 2)
       request.onupgradeneeded = (e) => {
         const db = e.target.result
         if (!db.objectStoreNames.contains('directory-handle')) {
@@ -99,6 +105,115 @@ export function setRootDirectory(handle) {
   rootDirectoryHandle = handle
 }
 
+// Format entry as human-readable text
+function formatEntryAsText(entry) {
+  const lines = []
+  const siteNumber = String(entry.siteNumber).padStart(3, '0')
+  const sep = '-'.repeat(40)
+
+  lines.push(`FIELD DIARY — SITE ${siteNumber}`)
+  lines.push(sep)
+
+  // Basic info
+  lines.push(`Date:        ${entry.date || '—'}`)
+  lines.push(`Time:        ${entry.localTime || '—'} (UTC ${entry.utcOffset || ''})`)
+  lines.push(`Collector:   ${entry.collector || '—'}`)
+  lines.push('')
+
+  // Location
+  lines.push('LOCATION')
+  lines.push(`  Latitude:  ${entry.latitude || '—'}`)
+  lines.push(`  Longitude: ${entry.longitude || '—'}`)
+  if (entry.accuracy) lines.push(`  Accuracy:  ${entry.accuracy} m`)
+  lines.push('')
+
+  // Site info
+  lines.push('SITE')
+  lines.push(`  Landscape:   ${entry.landscape || '—'}`)
+  if (entry.disturbance) lines.push(`  Disturbance: ${entry.disturbance}`)
+  if (entry.organicMatterType) lines.push(`  Organic matter: ${entry.organicMatterType}`)
+  if (entry.terrestrialAquatic) lines.push(`  Environment: ${entry.terrestrialAquatic}`)
+  lines.push('')
+
+  // Weather
+  if (entry.weather && Object.keys(entry.weather).length > 0) {
+    lines.push('WEATHER')
+    const w = entry.weather
+    if (w.airTemperature !== undefined) lines.push(`  Air temp:  ${w.airTemperature} °C`)
+    if (w.cloudCover !== undefined) lines.push(`  Cloud:     ${w.cloudCover}`)
+    if (w.windSpeed !== undefined) lines.push(`  Wind:      ${w.windSpeed} m/s`)
+    if (w.precipitation !== undefined) lines.push(`  Precip:    ${w.precipitation}`)
+    lines.push('')
+  }
+
+  // Soil
+  const hasSoil = entry.soilMoisture || entry.soilTemperature || entry.activeLayerDepth
+  if (hasSoil) {
+    lines.push('SOIL')
+    if (entry.soilTemperature) lines.push(`  Soil temp:    ${entry.soilTemperature} °C`)
+    if (entry.soilMoisture) lines.push(`  Soil moisture: ${entry.soilMoisture}`)
+    if (entry.soilMoistureType) lines.push(`  Moisture type: ${entry.soilMoistureType}`)
+    if (entry.activeLayerDepth) lines.push(`  Active layer: ${entry.activeLayerDepth} cm`)
+    const alDepths = [entry.alDepth1, entry.alDepth2, entry.alDepth3].filter(Boolean)
+    if (alDepths.length) lines.push(`  AL depths:    ${alDepths.join(', ')} cm`)
+    if (entry.standingWater) lines.push(`  Standing water: yes${entry.standingWaterDepth ? `, ${entry.standingWaterDepth} cm` : ''}`)
+    lines.push('')
+  }
+
+  // Vegetation short
+  if (entry.vegetationShort && Object.keys(entry.vegetationShort).length > 0) {
+    lines.push('VEGETATION (SHORT)')
+    for (const [cat, val] of Object.entries(entry.vegetationShort)) {
+      const cov = val?.coverage ?? 0
+      if (cov > 0 || val?.height) {
+        const covLabel = cov === 0 ? 'Absent' : cov === 1 ? 'Present' : 'Dominant'
+        const ht = val?.height ? `, ${val.height} cm` : ''
+        lines.push(`  ${cat}: ${covLabel}${ht}`)
+      }
+    }
+    if (entry.vegetationShortNotes) lines.push(`  Notes: ${entry.vegetationShortNotes}`)
+    lines.push('')
+  }
+
+  // Morphology
+  if (entry.morphology) {
+    lines.push('MORPHOLOGY')
+    lines.push(`  Topography: ${entry.morphology}`)
+    if (entry.waterFeatures) lines.push(`  Water: ${entry.waterFeatures}`)
+    if (entry.morphologyNotes) lines.push(`  Notes: ${entry.morphologyNotes}`)
+    lines.push('')
+  }
+
+  // Carbon flux
+  if (entry.carbonFluxMeasurement) {
+    lines.push('Carbon flux measurement: YES')
+    lines.push('')
+  }
+
+  // Notes
+  if (entry.notes) {
+    lines.push('NOTES')
+    lines.push(entry.notes)
+    lines.push('')
+  }
+
+  // Summary counts
+  const photoCount = (entry.entryPhotos?.length || 0) +
+    (entry.vegetationShortPhotos?.length || 0) +
+    (entry.vegetationLongPhotos?.length || 0)
+  const voiceCount = entry.voiceNotes?.length || 0
+  if (photoCount || voiceCount) {
+    lines.push(sep)
+    if (photoCount) lines.push(`Photos: ${photoCount}`)
+    if (voiceCount) lines.push(`Voice notes: ${voiceCount}`)
+  }
+
+  lines.push(sep)
+  lines.push(`Saved: ${new Date().toISOString()}`)
+
+  return lines.join('\n')
+}
+
 // Save site entry to device storage
 export async function saveSiteToDevice(entry, rootHandle) {
   if (!rootHandle) {
@@ -122,6 +237,13 @@ export async function saveSiteToDevice(entry, rootHandle) {
     const jsonContent = JSON.stringify(entry, null, 2)
     await jsonWriter.write(jsonContent)
     await jsonWriter.close()
+
+    // Save human-readable text file
+    const txtFileName = `site_${siteNumber}.txt`
+    const txtFile = await siteFolder.getFileHandle(txtFileName, { create: true })
+    const txtWriter = await txtFile.createWritable()
+    await txtWriter.write(formatEntryAsText(entry))
+    await txtWriter.close()
 
     // Create photos folder if needed
     let photosFolder = null
@@ -154,9 +276,8 @@ export async function saveSiteToDevice(entry, rootHandle) {
     if (entry.voiceNotes && entry.voiceNotes.length > 0) {
       const voiceFolder = await siteFolder.getDirectoryHandle('voice_notes', { create: true })
       for (const [index, note] of entry.voiceNotes.entries()) {
-        if (note.audioData) {
-          const timestamp = note.timestamp ? new Date(note.timestamp).toISOString().slice(11, 19) : index
-          await saveAudioToDevice(voiceFolder, note, `voice_note_${timestamp}`)
+        if (note.data) {
+          await saveAudioToDevice(voiceFolder, note, `voice_note_${index + 1}`)
         }
       }
     }
@@ -218,13 +339,20 @@ async function savePhotoToDevice(photosFolder, photo, baseFileName) {
 // Helper: save audio to device
 async function saveAudioToDevice(voiceFolder, note, baseFileName) {
   try {
-    const audioData = note.audioData
+    const audioData = note.data
     if (!audioData) return
 
     const base64 = audioData.split(',')[1]
     if (!base64) return
 
-    const fileName = `${baseFileName}.wav`
+    // Detect actual MIME type from data URL (browser records as webm, ogg, or m4a)
+    const mimeMatch = audioData.match(/data:([^;]+);base64/)
+    const mimeType = mimeMatch ? mimeMatch[1] : 'audio/webm'
+    const ext = mimeType.includes('wav') ? '.wav'
+      : mimeType.includes('ogg') ? '.ogg'
+      : mimeType.includes('mp4') || mimeType.includes('m4a') ? '.m4a'
+      : '.webm'
+    const fileName = `${baseFileName}${ext}`
 
     // Convert base64 to blob
     const byteCharacters = atob(base64)
@@ -233,7 +361,7 @@ async function saveAudioToDevice(voiceFolder, note, baseFileName) {
       byteNumbers[i] = byteCharacters.charCodeAt(i)
     }
     const byteArray = new Uint8Array(byteNumbers)
-    const blob = new Blob([byteArray], { type: 'audio/wav' })
+    const blob = new Blob([byteArray], { type: mimeType })
 
     // Write audio file
     const audioFile = await voiceFolder.getFileHandle(fileName, { create: true })

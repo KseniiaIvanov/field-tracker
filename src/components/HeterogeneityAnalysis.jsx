@@ -522,9 +522,13 @@ export default function HeterogeneityAnalysis({ allEntries }) {
 
         logger.debug('HeterogeneityAnalysis.jsx', `  Pixel bounds (expanded): X[${minPixelX}-${maxPixelX}] Y[${minPixelY}-${maxPixelY}] (size: ${expandedSize} of ${totalSize} pixels)`)
 
-        // If bounds are very small (sub-pixel or edge case), always scan entire raster
-        if ((maxPixelX - minPixelX + 1) * (maxPixelY - minPixelY + 1) <= 10 || expandedSize < totalSize * 0.1) {
-          logger.warn('HeterogeneityAnalysis.jsx', `  ⚠️ Bounds are tiny or calculated wrong - scanning ENTIRE raster instead`)
+        // Only fall back to full-raster scan for truly sub-pixel polygons (≤10 pixels).
+        // Never expand to the full raster just because the polygon is small relative
+        // to the raster — that would include pixels outside the polygon bbox, and even
+        // though pointInPolygon would still exclude them, it wastes time and could
+        // produce unexpected results if the polygon transform is slightly off.
+        if ((maxPixelX - minPixelX + 1) * (maxPixelY - minPixelY + 1) <= 4) {
+          logger.warn('HeterogeneityAnalysis.jsx', `  ⚠️ Sub-pixel polygon — scanning entire raster (will still filter by polygon)`)
           minPixelX = 0
           maxPixelX = width - 1
           minPixelY = 0
@@ -554,7 +558,9 @@ export default function HeterogeneityAnalysis({ allEntries }) {
         })
       } catch (err) {
         logger.error('HeterogeneityAnalysis.jsx', 'Fallback to main thread:', err)
-        resolve(extractValuesInPolygon(rasterData, polygon))
+        // Must pass transformedPolygonCoords here too — without it, UTM rasters would
+        // compare WGS84 degrees vs UTM metres in the point-in-polygon check (wrong).
+        resolve(extractValuesInPolygon(rasterData, polygon, transformedPolygonCoords))
       }
     })
   }
@@ -942,9 +948,24 @@ export default function HeterogeneityAnalysis({ allEntries }) {
           continue
         }
 
-        // Calculate stats
-        const siteHistogram = calculateHistogram(siteValues.map(s => s.value), 20)
-        const areaHistogram = calculateHistogram(areaValues, 20)
+        // Filter out NoData values (-9999 and similar fill values)
+        const isValidValue = v => isFinite(v) && v > -9000
+        const validSiteValues = siteValues.map(s => s.value).filter(isValidValue)
+        const validAreaValues = areaValues.filter(isValidValue)
+
+        if (validSiteValues.length === 0) {
+          alert(`❌ ${category}: All site values are NoData (-9999). Check raster alignment.`)
+          continue
+        }
+
+        // Calculate area histogram first to establish the shared value range
+        // Then force site histogram to use the same bin boundaries so that
+        // bin[i] covers identical value ranges in both — required for correct
+        // undersampling detection in findUnsampledRanges (which compares by index)
+        const areaHistogram = calculateHistogram(validAreaValues, 20)
+        const areaRangeMin = parseFloat(areaHistogram.stats.min)
+        const areaRangeMax = parseFloat(areaHistogram.stats.max)
+        const siteHistogram = calculateHistogram(validSiteValues, 20, areaRangeMin, areaRangeMax)
         const coverage = calculateCoverageAssessment(siteHistogram.stats, areaHistogram.stats)
 
         newResults[category] = {
@@ -1185,8 +1206,8 @@ export default function HeterogeneityAnalysis({ allEntries }) {
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr 1fr',
-          gap: '20px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '12px',
           fontSize: '11px'
         }}>
           {/* 1. Select Variables for Analysis */}
@@ -1270,7 +1291,11 @@ export default function HeterogeneityAnalysis({ allEntries }) {
             <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginTop: '4px' }}>
               or draw on map →
             </div>
-            {polygon && Object.keys(rastersByCategory).length > 0 && (
+          </div>
+
+          {/* 4. Run Analysis (to the right of Study Area) */}
+          {polygon && Object.keys(rastersByCategory).length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
               <button
                 onClick={async () => {
                   const selectedCategories = Object.keys(categorySettings).filter(cat => categorySettings[cat]?.enabled && rastersByCategory[cat])
@@ -1291,22 +1316,21 @@ export default function HeterogeneityAnalysis({ allEntries }) {
                 }}
                 disabled={loading}
                 style={{
-                  marginTop: '6px',
                   width: '100%',
-                  padding: '4px 8px',
+                  padding: '10px 8px',
                   backgroundColor: loading ? '#FFC107' : '#2196F3',
                   color: loading ? '#000' : 'white',
                   border: 'none',
                   borderRadius: '3px',
                   cursor: loading ? 'wait' : 'pointer',
-                  fontSize: '10px',
+                  fontSize: '11px',
                   fontWeight: '600'
                 }}
               >
                 {loading ? '⏳ Analyzing...' : '▶️ Run Analysis'}
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -1462,7 +1486,7 @@ export default function HeterogeneityAnalysis({ allEntries }) {
                 const visibleCount = Object.entries(CATEGORIES)
                   .filter(([key]) => analysisLayerSelection[key] && analysisResults[key])
                   .length
-                const columnCount = Math.min(4, visibleCount || 1)
+                const columnCount = Math.min(window.innerWidth < 600 ? 1 : 2, visibleCount || 1)
 
                 return (
               <div style={{

@@ -1,5 +1,4 @@
-const CACHE_NAME = 'field-tracker-v2'
-const RUNTIME_CACHE = 'field-tracker-runtime-v2'
+const CACHE_NAME = 'field-tracker-v4'
 
 const STATIC_ASSETS = [
   '/field-tracker/',
@@ -11,9 +10,7 @@ const STATIC_ASSETS = [
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS)
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   )
   self.skipWaiting()
 })
@@ -21,71 +18,44 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-            return caches.delete(cacheName)
-          }
-        })
-      )
-    })
+    caches.keys().then((names) =>
+      Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n)))
+    )
   )
   self.clients.claim()
 })
 
-// Fetch event - network first, fallback to cache
+// Fetch event - network-first for ALL same-origin requests
+// This ensures JS codec chunks (geotiff, lzw, deflate, etc.) are always fresh
+// and never served from a stale cache after a new deploy.
+// Falls back to cache only when offline.
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Skip cross-origin requests
-  if (url.origin !== location.origin) {
-    return
-  }
+  // Skip cross-origin (fonts, CDN, etc.)
+  if (url.origin !== location.origin) return
 
-  // For HTML documents, use network-first strategy
-  if (request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const cache = caches.open(RUNTIME_CACHE)
-            cache.then((c) => c.put(request, response.clone()))
-          }
-          return response
-        })
-        .catch(() => {
-          return caches.match(request)
-        })
-    )
-    return
-  }
-
-  // For other assets, use cache-first strategy
   event.respondWith(
-    caches.match(request).then((response) => {
-      if (response) {
-        return response
-      }
-
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response
+    fetch(request)
+      .then((response) => {
+        // Cache successful responses
+        if (response.ok) {
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then((c) => c.put(request, clone))
         }
-
-        const cache = caches.open(RUNTIME_CACHE)
-        cache.then((c) => c.put(request, response.clone()))
-
         return response
       })
-    })
+      .catch(() => {
+        // Offline fallback - serve from cache
+        return caches.match(request)
+      })
   )
 })
 
-// Handle messages from clients
+// Handle skip-waiting messages
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting()
   }
 })

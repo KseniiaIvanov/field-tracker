@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { validateTemperature, validateWindSpeed } from '../utils/validation'
 
-export default function Weather({ control, watch, setValue, previousEntry }) {
+export default function Weather({ control, watch, setValue, previousEntry, bluetoothReading, bluetoothError, startBluetoothRead }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [tempError, setTempError] = useState(null)
   const [windError, setWindError] = useState(null)
@@ -33,15 +33,33 @@ export default function Weather({ control, watch, setValue, previousEntry }) {
           <h2>Weather Conditions</h2>
           <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
         </button>
-        {previousEntry?.weather && (
-          <button onClick={copyFromPreviousEntry} className="copy-button" style={{ margin: '10px 12px', marginLeft: '0' }}>
-            📋 Copy
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '6px', margin: '10px 0 10px 0' }}>
+          {previousEntry?.weather && (
+            <button onClick={copyFromPreviousEntry} className="copy-button" style={{ padding: '8px 12px', fontSize: '12px' }}>
+              📋 Copy
+            </button>
+          )}
+          {startBluetoothRead && (
+            <button
+              type="button"
+              onClick={startBluetoothRead}
+              disabled={bluetoothReading}
+              style={{ padding: '8px 12px', backgroundColor: bluetoothReading ? '#FFC107' : 'var(--primary-color)', color: bluetoothReading ? '#000' : 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: bluetoothReading ? 'wait' : 'pointer', fontSize: '12px' }}
+            >
+              📡 {bluetoothReading ? 'Reading...' : 'Read Sensor'}
+            </button>
+          )}
+        </div>
       </div>
 
       {isExpanded && (
         <div className="section-content">
+          {bluetoothError && (
+            <div style={{ padding: '8px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', fontSize: '12px', marginBottom: '12px' }}>
+              {bluetoothError}
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div className="field-group">
               <label style={{ fontSize: '12px' }}>Cloud Cover (%)</label>
@@ -106,6 +124,28 @@ export default function Weather({ control, watch, setValue, previousEntry }) {
             </div>
 
             <div className="field-group">
+              <label style={{ fontSize: '12px' }}>Air Humidity (%)</label>
+              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={weatherData.humidity || ''}
+                  onChange={(e) => updateWeather('humidity', e.target.value === '' ? '' : parseInt(e.target.value))}
+                  placeholder="0-100"
+                  style={{
+                    flex: 1,
+                    padding: '6px 4px',
+                    fontSize: '13px'
+                  }}
+                />
+                <span style={{ fontWeight: 600, fontSize: '12px', minWidth: '16px' }}>%</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div className="field-group">
               <label style={{ fontSize: '12px' }}>Wind Speed (m/s)</label>
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                 <input
@@ -117,7 +157,7 @@ export default function Weather({ control, watch, setValue, previousEntry }) {
                     const value = e.target.value
                     const validation = validateWindSpeed(value)
                     setWindError(validation.valid ? null : validation.message)
-                    updateWeather('windSpeed', parseFloat(value) || '')
+                    updateWeather('windSpeed', value === '' ? '' : parseFloat(value))
                   }}
                   placeholder="e.g., 5.2"
                   style={{
@@ -135,6 +175,8 @@ export default function Weather({ control, watch, setValue, previousEntry }) {
                 </small>
               )}
             </div>
+
+            <div></div>
           </div>
 
           <div className="field-group">

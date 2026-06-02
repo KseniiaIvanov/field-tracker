@@ -15,7 +15,7 @@ import { getThresholdsForParameter, analyzeDistributionShape } from '../config/a
 
 // Determine which value ranges are undersampled
 // Returns detailed info about missing percentage and whether it's in peak ranges
-export function findUnsampledRanges(siteStats, areaStats, threshold = 0.3) {
+export function findUnsampledRanges(siteStats, areaStats, threshold = 0.5) {
   if (!siteStats?.bins || !areaStats?.bins) {
     return {
       bins: [],
@@ -94,38 +94,53 @@ export function findUnsampledRanges(siteStats, areaStats, threshold = 0.3) {
   }
 }
 
-// Create binary mask: 0 if value is well-sampled, 1 if undersampled
-function createBinaryMask(rasterData, unsampledRanges) {
+// Create weighted mask: 0 if well-sampled, areaBin.count/total if undersampled.
+// Weight = proportion of landscape in that bin, so histogram peaks get higher priority than rare tails.
+// Uses full areaHistogram for correct bin boundaries (fixes old binIndex mismatch bug).
+function createBinaryMask(rasterData, unsampledRanges, areaHistogram) {
   const { width, height, pixels } = rasterData
-  const mask = new Uint8Array(width * height)
+  const mask = new Float32Array(width * height)
 
-  // Create lookup for which value ranges are undersampled
-  const unsampledMap = new Set()
-  unsampledRanges.forEach(range => {
-    unsampledMap.add(range.binIndex)
-  })
+  if (!unsampledRanges.length) return mask
+
+  // Build weight lookup: binIndex (in full histogram) → area proportion weight
+  const bins = areaHistogram?.bins
+  if (!bins?.length) {
+    // Fallback: no histogram available, use binary 0/1
+    const unsampledSet = new Set(unsampledRanges.map(r => r.binIndex))
+    const fullMin = unsampledRanges[0].min
+    const fullMax = unsampledRanges[unsampledRanges.length - 1].max
+    const fullRange = fullMax - fullMin || 1
+    const binCount = unsampledRanges.length
+    for (let i = 0; i < pixels.length; i++) {
+      const v = pixels[i]
+      if (!isFinite(v) || v < fullMin || v > fullMax) continue
+      let idx = Math.floor((v - fullMin) / (fullRange / binCount))
+      if (idx >= binCount) idx = binCount - 1
+      if (unsampledSet.has(unsampledRanges[idx]?.binIndex)) mask[i] = 1
+    }
+    return mask
+  }
+
+  const totalAreaCount = bins.reduce((s, b) => s + (b.count || 0), 0) || 1
+  // Map binIndex → weight (area proportion), only for undersampled bins
+  const weightMap = new Map()
+  unsampledRanges.forEach(r => weightMap.set(r.binIndex, (r.areaCount || 1) / totalAreaCount))
+
+  const binCount = bins.length
+  const fullMin = bins[0].min
+  const fullMax = bins[binCount - 1].max
+  const fullRange = fullMax - fullMin || 1
+  const binWidth = fullRange / binCount
 
   for (let i = 0; i < pixels.length; i++) {
-    const value = pixels[i]
-
-    // Find which bin this value belongs to
-    if (unsampledRanges.length > 0) {
-      const minVal = unsampledRanges[0].min
-      const maxVal = unsampledRanges[unsampledRanges.length - 1].max
-      const range = maxVal - minVal || 1
-
-      if (value >= minVal && value <= maxVal) {
-        const binCount = unsampledRanges.length
-        const binWidth = range / binCount
-        let binIndex = Math.floor((value - minVal) / binWidth)
-        if (binIndex >= binCount) binIndex = binCount - 1
-        if (binIndex < 0) binIndex = 0
-
-        mask[i] = unsampledMap.has(binIndex) ? 1 : 0
-      } else {
-        mask[i] = 0
-      }
-    }
+    const v = pixels[i]
+    if (!isFinite(v) || v < fullMin || v > fullMax) continue
+    let binIdx = Math.floor((v - fullMin) / binWidth)
+    if (binIdx >= binCount) binIdx = binCount - 1
+    if (binIdx < 0) binIdx = 0
+    const w = weightMap.get(binIdx)
+    if (w !== undefined) mask[i] = w
   }
 
   return mask
@@ -192,39 +207,32 @@ function resampleBinaryMask(mask, sourceRaster, targetResolution, polygonBounds,
   const targetWidth = Math.ceil((polygonBounds.east - alignedOrigin.west) / targetResolution)
   const targetHeight = Math.ceil((polygonBounds.north - alignedOrigin.south) / targetResolution)
 
-  const targetMask = new Uint8Array(targetWidth * targetHeight)
+  const targetMask = new Float32Array(targetWidth * targetHeight)
 
-  // For each target pixel, find overlapping source pixels and apply OR logic
+  // For each target pixel, take the max weight of overlapping source pixels
   for (let ty = 0; ty < targetHeight; ty++) {
     for (let tx = 0; tx < targetWidth; tx++) {
       const targetIdx = ty * targetWidth + tx
-      let hasValue = 0
+      let maxVal = 0
 
-      // Calculate target pixel bounds
       const tPixelWest = alignedOrigin.west + tx * targetResolution
       const tPixelEast = tPixelWest + targetResolution
       const tPixelSouth = alignedOrigin.south + ty * targetResolution
       const tPixelNorth = tPixelSouth + targetResolution
 
-      // Find overlapping source pixels
       const srcStartX = Math.max(0, Math.floor((tPixelWest - srcBounds.west) / srcPixelWidth))
       const srcEndX = Math.min(srcWidth - 1, Math.floor((tPixelEast - srcBounds.west) / srcPixelWidth))
       const srcStartY = Math.max(0, Math.floor((tPixelSouth - srcBounds.south) / (srcPixelHeight || srcPixelWidth)))
       const srcEndY = Math.min(srcHeight - 1, Math.floor((tPixelNorth - srcBounds.south) / (srcPixelHeight || srcPixelWidth)))
 
-      // OR logic: if any source pixel is 1, target is 1
       for (let sy = srcStartY; sy <= srcEndY; sy++) {
         for (let sx = srcStartX; sx <= srcEndX; sx++) {
-          const srcIdx = sy * srcWidth + sx
-          if (mask[srcIdx] === 1) {
-            hasValue = 1
-            break
-          }
+          const v = mask[sy * srcWidth + sx]
+          if (v > maxVal) maxVal = v
         }
-        if (hasValue === 1) break
       }
 
-      targetMask[targetIdx] = hasValue
+      targetMask[targetIdx] = maxVal
     }
   }
 
@@ -331,7 +339,8 @@ export function createPriorityGrid(rastersByCategory, rasterDataCache, histogram
     }
 
     try {
-      const mask = createBinaryMask(rasterData, unsampledResult.bins)
+      const areaHistogram = histogramsByCategory[category]?.areaHistogram
+      const mask = createBinaryMask(rasterData, unsampledResult.bins, areaHistogram)
       binaryMasks[category] = {
         mask,
         rasterData,
@@ -390,7 +399,17 @@ export function createPriorityGrid(rastersByCategory, rasterDataCache, histogram
   const targetHeight = Math.ceil((polygonBounds.north - alignedOrigin.south) / targetResolution)
   logger.debug('priorityGridAlgorithm', `📏 Target grid size: ${targetWidth} × ${targetHeight} pixels`)
 
-  // Step 6: Create priority grid with weighted scores
+  // Pre-extract polygon coordinates for pointInPolygon checks
+  let polygonCoords = null
+  try {
+    if (polygon.geometry) {
+      polygonCoords = polygon.geometry.coordinates[0]
+    } else if (polygon.coordinates) {
+      polygonCoords = polygon.coordinates[0]
+    }
+  } catch (e) { /* will skip polygon filtering if coords unavailable */ }
+
+  // Step 6: Create priority grid with weighted scores — strictly inside polygon
   const priorityScores = new Array(targetWidth * targetHeight).fill(null).map(() => ({
     sum: 0,
     coverage: 0,
@@ -398,7 +417,24 @@ export function createPriorityGrid(rastersByCategory, rasterDataCache, histogram
     categoryContributions: {}
   }))
 
-  // For each target pixel, sum the weighted binary masks
+  // Build a boolean mask of which grid cells are inside the polygon (avoid re-checking per category)
+  const insidePolygon = new Uint8Array(targetWidth * targetHeight)
+  if (polygonCoords) {
+    for (let ty = 0; ty < targetHeight; ty++) {
+      for (let tx = 0; tx < targetWidth; tx++) {
+        const cellLon = alignedOrigin.west + (tx + 0.5) * targetResolution
+        const cellLat = alignedOrigin.south + (ty + 0.5) * targetResolution
+        if (pointInPolygon([cellLon, cellLat], polygonCoords)) {
+          insidePolygon[ty * targetWidth + tx] = 1
+        }
+      }
+    }
+  } else {
+    // Fallback: treat all cells as inside if polygon coords unavailable
+    insidePolygon.fill(1)
+  }
+
+  // For each target pixel, sum the weighted binary masks — only inside polygon
   for (let category in binaryMasks) {
     const { mask: binaryMask, rasterData, rasterInfo, priorityWeight } = binaryMasks[category]
 
@@ -413,16 +449,17 @@ export function createPriorityGrid(rastersByCategory, rasterDataCache, histogram
       alignedOrigin
     )
 
-    // Sum weighted contributions into priority grid
+    // Sum weighted contributions into priority grid (polygon cells only)
     for (let idx = 0; idx < Math.min(resampledMask.mask.length, priorityScores.length); idx++) {
+      if (!insidePolygon[idx]) continue  // skip cells outside polygon
+
       // Apply priority weight to the mask value
       const weightedContribution = resampledMask.mask[idx] * priorityWeight
       priorityScores[idx].sum += weightedContribution
       priorityScores[idx].coverage += 1
       priorityScores[idx].categoryContributions[category] = weightedContribution
 
-      // Store the pixel value from original raster for all pixels (not just undersampled ones)
-      // Find which source pixels contributed to this target pixel
+      // Store the pixel value from original raster for reference
       const ty = Math.floor(idx / targetWidth)
       const tx = idx % targetWidth
 
@@ -435,9 +472,11 @@ export function createPriorityGrid(rastersByCategory, rasterDataCache, histogram
       if (srcPixelX >= 0 && srcPixelX < rasterData.width && srcPixelY >= 0 && srcPixelY < rasterData.height) {
         const srcIdx = srcPixelY * rasterData.width + srcPixelX
         if (srcIdx >= 0 && srcIdx < rasterData.pixels.length) {
-          const pixelValue = parseFloat(rasterData.pixels[srcIdx].toFixed(1))
-          if (isFinite(pixelValue)) {
-            priorityScores[idx].values[category] = pixelValue
+          const raw = rasterData.pixels[srcIdx]
+          // Skip NoData / NA sentinels (-9999, -9998, -32768, large fills) so they
+          // never appear in the planner table's value columns.
+          if (isFinite(raw) && raw > -9000 && raw < 1e20) {
+            priorityScores[idx].values[category] = parseFloat(raw.toFixed(1))
           }
         }
       }
@@ -465,13 +504,20 @@ export function generateCandidatePoints(priorityGrid, priorityScores, alignedOri
   const candidates = []
 
   // Calculate priority statistics for adaptive thresholding
+  // NOTE: avoid Math.max(...bigArray) spread — blows stack on large rasters
   const priorities = priorityScores.filter(p => p.sum > 0).map(p => p.sum)
-  const maxPriority = Math.max(...priorities, 1)
-  const minPriority = Math.min(...priorities, 0)
-  const avgPriority = priorities.reduce((a, b) => a + b, 0) / Math.max(priorities.length, 1)
+  let maxPriority = 1
+  let minPriority = 0
+  let prioritySum = 0
+  for (const p of priorities) {
+    if (p > maxPriority) maxPriority = p
+    if (p < minPriority) minPriority = p
+    prioritySum += p
+  }
+  const avgPriority = priorities.length > 0 ? prioritySum / priorities.length : 0
 
-  // Sort for percentile calculation
-  const sortedPriorities = [...priorities].sort((a, b) => b - a)
+  // Sort for percentile calculation (slice avoids mutating original)
+  const sortedPriorities = priorities.slice().sort((a, b) => b - a)
   const high75Idx = Math.floor(sortedPriorities.length * 0.25) // Top 25%
   const high50Idx = Math.floor(sortedPriorities.length * 0.50) // Top 50%
 
@@ -487,50 +533,25 @@ export function generateCandidatePoints(priorityGrid, priorityScores, alignedOri
       const tx = idx % priorityGrid.width
       const priority = priorityScores[idx].sum
 
-      // Determine zone priority level based on percentile thresholds
+      // One candidate per cell at its center — preserves spatial uniqueness so
+      // top-N by priority gives N different locations spread across the grid.
       let zoneLevel = 'low'
-      let pointsInZone = 1  // Base: 1 point per cell
+      if (priority >= thresholdHigh) zoneLevel = 'critical'
+      else if (priority >= thresholdMedium) zoneLevel = 'high'
+      else if (priority > 0) zoneLevel = 'medium'
 
-      if (priority >= thresholdHigh) {
-        zoneLevel = 'critical'
-        pointsInZone = 4  // Critical zones get densest clustering
-      } else if (priority >= thresholdMedium) {
-        zoneLevel = 'high'
-        pointsInZone = 3  // High-priority zones get 3 points
-      } else if (priority > 0) {
-        zoneLevel = 'medium'
-        pointsInZone = 2  // Medium-priority zones get 2 points
-      }
+      const lon = alignedOrigin.west + (tx + 0.5) * targetResolution
+      const lat = alignedOrigin.south + (ty + 0.5) * targetResolution
 
-      // Generate multiple points in high-priority zones (hierarchical grid)
-      for (let ptIdx = 0; ptIdx < pointsInZone; ptIdx++) {
-        const gridOffset = pointsInZone === 1 ? 0.5 : (ptIdx + 1) / (pointsInZone + 1)
-
-        // Grid center position within cell
-        const centerLon = alignedOrigin.west + (tx + gridOffset) * targetResolution
-        const centerLat = alignedOrigin.south + (ty + gridOffset) * targetResolution
-
-        // Add controlled jitter (smaller for high-priority to keep clusters tight)
-        const jitterFactor = zoneLevel === 'critical' ? 0.3 : zoneLevel === 'high' ? 0.35 : 0.5
-        const jitterRangeX = targetResolution * jitterFactor
-        const jitterRangeY = targetResolution * jitterFactor
-
-        const randomJitterX = (Math.random() - 0.5) * 2 * jitterRangeX
-        const randomJitterY = (Math.random() - 0.5) * 2 * jitterRangeY
-
-        const lon = centerLon + randomJitterX
-        const lat = centerLat + randomJitterY
-
-        candidates.push({
-          index: idx,
-          lon: parseFloat(lon.toFixed(6)),
-          lat: parseFloat(lat.toFixed(6)),
-          priority: parseFloat(priority.toFixed(1)),
-          zoneLevel: zoneLevel,
-          coverage: priorityScores[idx].coverage,
-          values: priorityScores[idx].values
-        })
-      }
+      candidates.push({
+        index: idx,
+        lon: parseFloat(lon.toFixed(6)),
+        lat: parseFloat(lat.toFixed(6)),
+        priority: parseFloat(priority.toFixed(1)),
+        zoneLevel,
+        coverage: priorityScores[idx].coverage,
+        values: priorityScores[idx].values
+      })
     }
   }
 

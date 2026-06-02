@@ -17,12 +17,22 @@ function pointInPolygon(point, polygon) {
   return inside
 }
 
+// NoData / NA detection — must match isNoDataValue() in rasterProcessing.js
+function isNoDataValue(value) {
+  if (value === null || value === undefined || !isFinite(value)) return true
+  if (value <= -9000) return true   // -9999, -9998, -32768, etc.
+  if (value >= 1e20) return true    // large positive fill
+  return false
+}
+
 // Получить значение пиксела
 function getPixelValue(pixels, width, x, y) {
   if (x < 0 || x >= width || y < 0) return null
   const index = y * width + x
   if (index >= pixels.length) return null
-  return pixels[index]
+  const value = pixels[index]
+  if (isNoDataValue(value)) return null
+  return value
 }
 
 // Преобразовать пиксель в координаты (упрощено, без CRS конверсии)
