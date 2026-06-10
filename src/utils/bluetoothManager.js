@@ -40,10 +40,12 @@ export async function discoverAndReadDevice() {
     })
 
     logger.debug('bluetoothManager', `✅ Device discovered: ${device.name}`)
+    console.log(`✅ Device discovered: ${device.name}`)
 
     // Connect to GATT server
     const server = await device.gatt.connect()
     logger.debug('bluetoothManager', '✅ GATT server connected')
+    console.log('✅ GATT server connected')
 
     // Try to read from Environmental Sensing Service (temperature + humidity)
     // LYWSD03MMC exposes these via standard BLE characteristics
@@ -52,7 +54,10 @@ export async function discoverAndReadDevice() {
 
     try {
       // Environmental Sensing Service
+      console.log('🔍 Trying Environmental Sensing Service (0x181a)...')
       const service = await server.getPrimaryService('0000181a-0000-1000-8000-00805f9b34fb')
+      logger.debug('bluetoothManager', '✅ Environmental Sensing Service found')
+      console.log('✅ Found Environmental Sensing Service')
 
       // Temperature Characteristic (UUID: 2a1c)
       try {
@@ -61,9 +66,9 @@ export async function discoverAndReadDevice() {
         // Temperature is signed int16 in 0.01°C units
         const tempRaw = tempValue.getInt16(0, true)
         temperature = parseFloat((tempRaw / 100).toFixed(2))
-        logger.debug('bluetoothManager', `🌡️ Temperature read: ${temperature}°C`)
+        logger.debug('bluetoothManager', `🌡️ Temperature read: ${temperature}°C (raw: ${tempRaw})`)
       } catch (err) {
-        logger.warn('bluetoothManager', 'Could not read temperature characteristic:', err.message)
+        logger.warn('bluetoothManager', 'Could not read temperature characteristic (2a1c):', err.message)
       }
 
       // Humidity Characteristic (UUID: 2a6f)
@@ -74,12 +79,50 @@ export async function discoverAndReadDevice() {
         humidity = humidValue.getUint8(0)
         logger.debug('bluetoothManager', `💧 Humidity read: ${humidity}%`)
       } catch (err) {
-        logger.warn('bluetoothManager', 'Could not read humidity characteristic:', err.message)
+        logger.warn('bluetoothManager', 'Could not read humidity characteristic (2a6f):', err.message)
       }
     } catch (serviceErr) {
-      logger.warn('bluetoothManager', 'Environmental Sensing Service not available, trying fallback...')
-      // Fallback: try Device Information Service or parse from broadcast
-      // LYWSD03MMC sometimes uses non-standard characteristics
+      console.warn(`⚠️ Service 0x181a not available: ${serviceErr.message}`)
+      logger.warn('bluetoothManager', 'Environmental Sensing Service (0x181a) not available:', serviceErr.message)
+
+      // Fallback: Try Device Information Service (0x180a)
+      // Xiaomi with ATC/pvvx firmware uses different UUIDs
+      try {
+        console.log('🔄 Trying Device Information Service (0x180a) fallback...')
+        logger.debug('bluetoothManager', '🔄 Trying fallback services...')
+
+        // Try Device Information Service (0x180a) - some devices expose temp/humid here
+        try {
+          const devInfoService = await server.getPrimaryService('0000180a-0000-1000-8000-00805f9b34fb')
+          logger.debug('bluetoothManager', '✅ Device Information Service found, trying custom characteristics...')
+
+          // Try common custom UUIDs used by ATC firmware
+          const customUUIDs = [
+            '00002a6e-0000-1000-8000-00805f9b34fb', // Temperature (some versions)
+            '00002a6f-0000-1000-8000-00805f9b34fb'  // Humidity
+          ]
+
+          for (const uuid of customUUIDs) {
+            try {
+              const char = await devInfoService.getCharacteristic(uuid)
+              const value = await char.readValue()
+              if (uuid.endsWith('2a6e')) {
+                temperature = parseFloat((value.getInt16(0, true) / 100).toFixed(2))
+                logger.debug('bluetoothManager', `🌡️ Temperature (custom): ${temperature}°C`)
+              } else if (uuid.endsWith('2a6f')) {
+                humidity = value.getUint8(0)
+                logger.debug('bluetoothManager', `💧 Humidity (custom): ${humidity}%`)
+              }
+            } catch {
+              // Continue trying other UUIDs
+            }
+          }
+        } catch (err) {
+          logger.warn('bluetoothManager', 'Device Information Service fallback also failed:', err.message)
+        }
+      } catch (err) {
+        logger.warn('bluetoothManager', 'All service attempts failed:', err.message)
+      }
     }
 
     // Disconnect
@@ -87,6 +130,7 @@ export async function discoverAndReadDevice() {
     logger.debug('bluetoothManager', '🔌 Disconnected')
 
     if (temperature === null || humidity === null) {
+      console.warn(`❌ Failed to read data - Temperature: ${temperature}, Humidity: ${humidity}`)
       return {
         success: false,
         error: '⚠️ Could not read sensor data. Try again or move closer.',

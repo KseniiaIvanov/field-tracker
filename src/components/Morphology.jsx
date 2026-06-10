@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function Morphology({ control, watch, setValue }) {
+export default function Morphology({ watch, setValue }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const data = watch()
 
@@ -39,6 +39,18 @@ export default function Morphology({ control, watch, setValue }) {
             </div>
           </div>
 
+
+          <div className="field-group">
+            <label>Disturbances</label>
+            <input
+              type="text"
+              value={data.disturbance || ''}
+              onChange={(e) => setValue('disturbance', e.target.value)}
+              maxLength="60"
+              placeholder="Thermokarst, erosion, trampling..."
+              style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
 
           <div className="field-group">
             <label>Water Features</label>

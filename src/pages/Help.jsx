@@ -20,10 +20,24 @@ export default function Help({ setCurrentPage }) {
       icon: '💾',
       title: 'Device Storage Setup',
       tips: [
-        '📁 Select storage folder on Home page (one-time setup)',
-        '✅ Each Site auto-saves: Date → Site_### → JSON + photos + voice notes',
-        '🔄 Data in both app storage AND device folder (double backup)',
-        '📱 Access files via Files app on your phone'
+        '📁 "Select Storage Folder" on Home (one-time) — Android Chrome / desktop only',
+        '🍎 iPhone/iPad: no folder picker — data stays in-app; use Export / Share to get files out',
+        '✅ Each site auto-saves: Date → Site_### → JSON + photos + voice notes',
+        '🏷️ Files named Site_###_date_time_type (sortable, self-documenting)',
+        '🔄 Data kept in app storage AND (where supported) the chosen folder',
+        '📱 Access folder files via the Files app on your phone'
+      ]
+    },
+    {
+      id: 'offline',
+      icon: '📶',
+      title: 'Offline & Install',
+      tips: [
+        '✈️ Works fully offline after the first online load — capture, storage & analysis run with no signal',
+        '📲 Install to home screen: Android (Chrome) shows a prompt; on iPhone/iPad use Share → "Add to Home Screen"',
+        '🔌 Network only needed for first install, app updates, and the online map background',
+        '⏳ iOS may clear app storage if unused for a while — open it online & export before fieldwork',
+        '💾 Export and back up regularly to be safe'
       ]
     },
     {

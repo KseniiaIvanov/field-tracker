@@ -49,7 +49,7 @@ function pixelToCoordinateLonLat(x, y, geotransform) {
 }
 
 self.onmessage = function(event) {
-  const { pixels, width, height, geotransform, polygonCoords, minPixelX, maxPixelX, minPixelY, maxPixelY } = event.data
+  const { pixels, width, geotransform, polygonCoords, minPixelX, maxPixelX, minPixelY, maxPixelY } = event.data
 
   const values = []
   let pixelsChecked = 0
@@ -70,7 +70,7 @@ self.onmessage = function(event) {
             values.push(value)
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore pixel errors
       }
     }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import logger from '../utils/logger'
-import { createPriorityHeatMap, getZoneLevelColor } from '../utils/priorityHeatMap'
+import { createPriorityHeatMap } from '../utils/priorityHeatMap'
 
 /**
  * Display priority heat map overlay on top of RasterViewer

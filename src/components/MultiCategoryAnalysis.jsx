@@ -1,6 +1,6 @@
 import { memo } from 'react'
 
-function MultiCategoryAnalysis({ analysisResults, categorySettings, analysisLayerSelection, categoryLabels }) {
+function MultiCategoryAnalysis({ analysisResults, analysisLayerSelection, categoryLabels }) {
   if (!analysisResults || Object.keys(analysisResults).length === 0) {
     return (
       <div style={{
@@ -46,9 +46,6 @@ function MultiCategoryAnalysis({ analysisResults, categorySettings, analysisLaye
   // Sort by coverage percentage (best first)
   const sorted = [...summaryData].sort((a, b) => b.coverage - a.coverage)
 
-  // Find problems
-  const poorCoverage = summaryData.filter(s => s.assessment === 'Poor')
-  const partialCoverage = summaryData.filter(s => s.assessment === 'Partial')
   const averageCoverage = (summaryData.reduce((sum, s) => sum + s.coverage, 0) / summaryData.length).toFixed(1)
 
   const getAssessmentColor = (assessment) => {

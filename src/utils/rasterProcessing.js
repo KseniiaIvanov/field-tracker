@@ -553,70 +553,6 @@ async function parseGeotransform(image) {
   return geotransform
 }
 
-function parseBounds(image) {
-  const geoKeys = image.geoKeys || {}
-
-  // Try to get ModelTiepoint
-  let tiepoint = geoKeys.ModelTiepoint
-  if (!tiepoint && geoKeys.TiePoints) {
-    tiepoint = geoKeys.TiePoints
-  }
-
-  // Try to get ModelPixelScale
-  let pixelScale = geoKeys.ModelPixelScale
-  if (!pixelScale && geoKeys.PixelScale) {
-    pixelScale = geoKeys.PixelScale
-  }
-
-  // Extract origin and pixel size, handling both object and array formats
-  let originX = 0
-  let originY = 0
-  let pixelWidth = 1
-  let pixelHeight = 1
-
-  if (tiepoint) {
-    // Handle object format: [{col: 0, row: 0, x: 419500, y: 7580000}, ...]
-    if (Array.isArray(tiepoint) && tiepoint.length > 0 && typeof tiepoint[0] === 'object' && tiepoint[0].x !== undefined) {
-      originX = tiepoint[0].x
-      originY = tiepoint[0].y
-    }
-    // Handle array format: [pixelCol, pixelRow, pixelZ, worldX, worldY, worldZ, ...]
-    else if (Array.isArray(tiepoint) && tiepoint.length >= 5) {
-      originX = tiepoint[3]
-      originY = tiepoint[4]
-    }
-  }
-
-  if (pixelScale) {
-    // Handle object format: {x: 30, y: 30}
-    if (typeof pixelScale === 'object' && pixelScale.x !== undefined) {
-      pixelWidth = pixelScale.x
-      pixelHeight = pixelScale.y
-    }
-    // Handle array format: [pixelWidth, pixelHeight, ...]
-    else if (Array.isArray(pixelScale) && pixelScale.length >= 2) {
-      pixelWidth = pixelScale[0]
-      pixelHeight = pixelScale[1]
-    }
-  }
-
-  const width = image.getWidth()
-  const height = image.getHeight()
-
-  const minX = originX
-  const maxY = originY
-  const maxX = minX + width * pixelWidth
-  const minY = maxY - height * pixelHeight
-
-  return {
-    north: maxY,
-    south: minY,
-    east: maxX,
-    west: minX,
-    bounds: [[minY, minX], [maxY, maxX]]
-  }
-}
-
 export function pixelToCoordinate(rasterData, pixelX, pixelY) {
   const geotransform = rasterData.geotransform
   const x = geotransform[0] + pixelX * geotransform[1] + pixelY * geotransform[2]
@@ -638,8 +574,8 @@ export function coordinateToPixel(rasterData, lat, lon) {
   }
 
   // If raster is in UTM, convert input lat/lon to UTM
-  let x = lon
-  let y = lat
+  let x
+  let y
   if (sourceCRS !== 'EPSG:4326') {
     try {
       const transformed = transformCoordinates(lon, lat, 'EPSG:4326', sourceCRS)

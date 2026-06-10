@@ -3,14 +3,12 @@ import { validateCoordinates, validateSiteNumber } from '../utils/validation'
 import piexif from 'piexifjs'
 
 const LANDSCAPE_DEFAULTS = ['RTS', 'Polygon', 'Trench', 'Shore', 'Pond', 'Hummock', 'Palsa', 'Thermokarst', 'Degraded', 'Wet Sedge', 'Dry Moss', 'Mixed']
-const DISTURBANCE_DEFAULTS = ['None', 'Thermokarst', 'Erosion', 'Trampling', 'Slump', 'Other']
 const ORGANIC_MATTER_TYPES = ['Live vegetation', 'Litter', 'Peat', 'Mixed']
 
-export default function PointInfo({ control, watch, setValue, previousEntry, gpsAveraging, setGpsAveraging, bluetoothReading, bluetoothError, startBluetoothRead }) {
+export default function PointInfo({ watch, setValue, previousEntry, gpsAveraging, setGpsAveraging }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [landscapeSuggestions, setLandscapeSuggestions] = useState([])
-  const [allLandscapes, setAllLandscapes] = useState(LANDSCAPE_DEFAULTS)
-  const [disturbanceSuggestions, setDisturbanceSuggestions] = useState([])
+  const [allLandscapes] = useState(LANDSCAPE_DEFAULTS)
   const [errors, setErrors] = useState({})
   const [uploadedPhoto, setUploadedPhoto] = useState(null)
   const [photoMessage, setPhotoMessage] = useState('')
@@ -222,22 +220,6 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
     setValue('siteNumber', Math.max(1, (data.siteNumber || 1) - 1))
   }
 
-  const copyCoordinatesFromClipboard = async () => {
-    try {
-      const text = await navigator.clipboard.readText()
-      const coords = text.match(/([-\d.]+)[,\s]+([-\d.]+)/)
-      if (coords) {
-        setValue('latitude', parseFloat(coords[1]).toFixed(6))
-        setValue('longitude', parseFloat(coords[2]).toFixed(6))
-        alert('✓ Координаты скопированы')
-      } else {
-        alert('❌ Формат не распознан. Используй: LAT,LON')
-      }
-    } catch (err) {
-      alert('❌ Доступ к буферу обмена запрещен')
-    }
-  }
-
   // Extract GPS coordinates from photo EXIF
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -341,12 +323,12 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
       {isExpanded && (
         <div className="section-content">
 
-          {/* ROW 1: Site # + Date + Time (3 columns, 1 row) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '8px', alignItems: 'end' }}>
+          {/* ROW 1: Site # + Date + Time (3 columns, compact) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '6px', alignItems: 'end' }}>
             <div className="field-group">
-              <label>Site #</label>
-              <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <button onClick={decrementSite} style={{ padding: '8px 10px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>−</button>
+              <label style={{ fontSize: '11px' }}>Site #</label>
+              <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                <button onClick={decrementSite} style={{ padding: '2px 4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '3px', cursor: 'pointer', minWidth: '24px' }}>−</button>
                 <input
                   type="number"
                   value={data.siteNumber || 1}
@@ -357,18 +339,18 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
                     setValue('siteNumber', parseInt(value) || 1)
                   }}
                   min="1" max="999"
-                  style={{ width: '52px', textAlign: 'center', fontWeight: '700', padding: '8px', fontSize: '16px', color: '#1a1a1a', backgroundColor: '#fff', border: errors.siteNumber ? '1px solid #d32f2f' : '1px solid #ddd', borderRadius: '6px' }}
+                  style={{ width: '40px', textAlign: 'center', fontWeight: '700', padding: '4px', fontSize: '12px', color: '#1a1a1a', backgroundColor: '#fff', border: errors.siteNumber ? '1px solid #d32f2f' : '1px solid #ddd', borderRadius: '4px' }}
                 />
-                <button onClick={incrementSite} style={{ padding: '8px 10px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}>+</button>
+                <button onClick={incrementSite} style={{ padding: '2px 4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '3px', cursor: 'pointer', minWidth: '24px' }}>+</button>
               </div>
             </div>
             <div className="field-group">
-              <label>Date</label>
-              <input type="date" value={data.date} onChange={(e) => setValue('date', e.target.value)} />
+              <label style={{ fontSize: '11px' }}>Date</label>
+              <input type="date" value={data.date} onChange={(e) => setValue('date', e.target.value)} style={{ fontSize: '12px', padding: '4px' }} />
             </div>
             <div className="field-group">
-              <label>Time</label>
-              <input type="time" value={data.localTime} onChange={(e) => setValue('localTime', e.target.value)} />
+              <label style={{ fontSize: '11px' }}>Time</label>
+              <input type="time" value={data.localTime} onChange={(e) => setValue('localTime', e.target.value)} style={{ fontSize: '12px', padding: '4px' }} />
             </div>
           </div>
 
@@ -428,13 +410,14 @@ export default function PointInfo({ control, watch, setValue, previousEntry, gps
           {/* ROW 6: Disturbances + Notes (2 columns, 1 row) */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <div className="field-group">
-              <label>Disturbances</label>
-              <input
-                type="text"
-                value={data.disturbance || ''}
-                onChange={(e) => setValue('disturbance', e.target.value)}
-                maxLength="60"
-              />
+              <label>Hydrotiles</label>
+              <select value={data.hydrotiles || ''} onChange={(e) => setValue('hydrotiles', e.target.value)}>
+                <option value="">Select...</option>
+                <option value="Up-up">Up-up</option>
+                <option value="Up-low">Up-low</option>
+                <option value="Low-up">Low-up</option>
+                <option value="Low-low">Low-low</option>
+              </select>
             </div>
 
             <div className="field-group">

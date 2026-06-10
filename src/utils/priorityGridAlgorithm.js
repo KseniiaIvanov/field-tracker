@@ -1,6 +1,6 @@
 import logger from './logger'
 import { pointInPolygon, getPolygonBounds } from './rasterProcessing'
-import { getThresholdsForParameter, analyzeDistributionShape } from '../config/algorithmConfig'
+import { getThresholdsForParameter } from '../config/algorithmConfig'
 
 /**
  * Priority Grid Algorithm for optimal measurement point planning
@@ -28,7 +28,6 @@ export function findUnsampledRanges(siteStats, areaStats, threshold = 0.5) {
 
   // Calculate total counts for percentage calculation
   const totalAreaCount = areaStats.bins.reduce((sum, bin) => sum + (bin.count || 0), 0)
-  const totalSiteCount = siteStats.bins.reduce((sum, bin) => sum + (bin.count || 0), 0)
 
   // Identify "peak" bins (highest density ranges)
   // Peak = bins in the top 25% by density (highest values, not 75th percentile)
@@ -361,11 +360,11 @@ export function createPriorityGrid(rastersByCategory, rasterDataCache, histogram
   // Step 3: Determine target resolution based on raster sizes
   // Use the SMALLEST raster's pixel dimensions as the target resolution
   // This ensures we don't lose detail
-  let targetResolution = Infinity
+  let targetResolution
   let smallestRasterWidth = Infinity
   let smallestRasterHeight = Infinity
 
-  Object.values(binaryMasks).forEach(({ rasterData, rasterInfo }) => {
+  Object.values(binaryMasks).forEach(({ rasterData }) => {
     if (rasterData.width < smallestRasterWidth) {
       smallestRasterWidth = rasterData.width
       smallestRasterHeight = rasterData.height
@@ -407,7 +406,7 @@ export function createPriorityGrid(rastersByCategory, rasterDataCache, histogram
     } else if (polygon.coordinates) {
       polygonCoords = polygon.coordinates[0]
     }
-  } catch (e) { /* will skip polygon filtering if coords unavailable */ }
+  } catch { /* will skip polygon filtering if coords unavailable */ }
 
   // Step 6: Create priority grid with weighted scores — strictly inside polygon
   const priorityScores = new Array(targetWidth * targetHeight).fill(null).map(() => ({
@@ -508,13 +507,10 @@ export function generateCandidatePoints(priorityGrid, priorityScores, alignedOri
   const priorities = priorityScores.filter(p => p.sum > 0).map(p => p.sum)
   let maxPriority = 1
   let minPriority = 0
-  let prioritySum = 0
   for (const p of priorities) {
     if (p > maxPriority) maxPriority = p
     if (p < minPriority) minPriority = p
-    prioritySum += p
   }
-  const avgPriority = priorities.length > 0 ? prioritySum / priorities.length : 0
 
   // Sort for percentile calculation (slice avoids mutating original)
   const sortedPriorities = priorities.slice().sort((a, b) => b - a)

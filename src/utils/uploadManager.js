@@ -4,7 +4,7 @@
  */
 
 import logger from './logger'
-import { saveRasterData, deleteRasterData } from './indexedDBManager'
+import { deleteRasterData } from './indexedDBManager'
 
 export class UploadTransaction {
   constructor(category) {

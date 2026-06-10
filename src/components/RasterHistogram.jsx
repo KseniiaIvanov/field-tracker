@@ -37,17 +37,16 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
     return Math.max(...siteDensities, ...areaDensities, 0.001)
   }, [siteStats, areaStats])
 
-  if (!siteStats || !areaStats) {
-    return <div style={{ padding: '20px', color: 'var(--text-secondary)' }}>No data to display</div>
-  }
-
-  // Generate distribution curve points for both site and area
-  const minVal = Math.min(siteStats.stats.min, areaStats.stats.min)
-  const maxVal = Math.max(siteStats.stats.max, areaStats.stats.max)
+  // Generate distribution curve points for both site and area.
+  // Values are null-safe here; the guarded early return for missing data lives
+  // below, AFTER all hooks, so hooks always run in the same order (rules-of-hooks).
+  const minVal = Math.min(siteStats?.stats?.min ?? 0, areaStats?.stats?.min ?? 0)
+  const maxVal = Math.max(siteStats?.stats?.max ?? 1, areaStats?.stats?.max ?? 1)
   const curvePoints = 100
   const step = (maxVal - minVal) / curvePoints
 
   const siteCurveData = useMemo(() => {
+    if (!siteStats) return []
     const points = []
     const mean = parseFloat(siteStats.stats.mean)
     const std = parseFloat(siteStats.stats.std)
@@ -62,6 +61,7 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
   }, [siteStats, minVal, step])
 
   const areaCurveData = useMemo(() => {
+    if (!areaStats) return []
     const points = []
     const mean = parseFloat(areaStats.stats.mean)
     const std = parseFloat(areaStats.stats.std)
@@ -99,9 +99,10 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
 
   // Create filled area paths (with 40% opacity)
   const siteAreaPath = useMemo(() => {
+    if (siteCurveData.length === 0) return ''
     const baseline = SVG_HEIGHT - PADDING.bottom
     let path = `M ${xScale(siteCurveData[0].x)} ${baseline}`
-    siteCurveData.forEach((point, idx) => {
+    siteCurveData.forEach((point) => {
       path += ` L ${xScale(point.x)} ${yScale(point.y)}`
     })
     path += ` L ${xScale(siteCurveData[siteCurveData.length - 1].x)} ${baseline} Z`
@@ -109,16 +110,21 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
   }, [siteCurveData, xScale, yScale])
 
   const areaAreaPath = useMemo(() => {
+    if (areaCurveData.length === 0) return ''
     const baseline = SVG_HEIGHT - PADDING.bottom
     let path = `M ${xScale(areaCurveData[0].x)} ${baseline}`
-    areaCurveData.forEach((point, idx) => {
+    areaCurveData.forEach((point) => {
       path += ` L ${xScale(point.x)} ${yScale(point.y)}`
     })
     path += ` L ${xScale(areaCurveData[areaCurveData.length - 1].x)} ${baseline} Z`
     return path
   }, [areaCurveData, xScale, yScale])
 
-  const binWidth = CHART_WIDTH / siteStats.bins.length
+  // All hooks above run unconditionally; only now is it safe to bail out if data is missing.
+  if (!siteStats || !areaStats) {
+    return <div style={{ padding: '20px', color: 'var(--text-secondary)' }}>No data to display</div>
+  }
+
 
   return (
     <div className="histogram-comparison">
@@ -365,16 +371,6 @@ function getAssessmentBorderColor(assessment) {
     default:
       return '#999'
   }
-}
-
-function getCoverageMessage(assessment) {
-  const messages = {
-    'Excellent': '✓ Your sites excellently represent the variation in the study area. Heterogeneity is well-captured.',
-    'Good': '✓ Your sites well represent the variation. Sampling coverage is adequate.',
-    'Partial': '⚠ Your sites partially represent the variation. Consider additional sampling in underrepresented areas.',
-    'Poor': '✗ Your sites poorly represent the variation. Additional strategic sampling recommended.'
-  }
-  return messages[assessment] || 'Unable to assess coverage'
 }
 
 export default memo(RasterHistogram)

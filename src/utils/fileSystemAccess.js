@@ -89,7 +89,7 @@ export async function requestRootDirectory() {
     return rootDirectoryHandle
   } catch (error) {
     if (error.name === 'AbortError') {
-      throw new Error('User cancelled folder selection')
+      throw new Error('User cancelled folder selection', { cause: error })
     }
     throw error
   }
@@ -111,38 +111,40 @@ function formatEntryAsText(entry) {
   const siteNumber = String(entry.siteNumber).padStart(3, '0')
   const sep = '-'.repeat(40)
 
-  lines.push(`FIELD DIARY — SITE ${siteNumber}`)
+  lines.push(`FIELD DIARY - SITE ${siteNumber}`)
   lines.push(sep)
 
   // Basic info
-  lines.push(`Date:        ${entry.date || '—'}`)
-  lines.push(`Time:        ${entry.localTime || '—'} (UTC ${entry.utcOffset || ''})`)
-  lines.push(`Collector:   ${entry.collector || '—'}`)
+  lines.push(`Date:        ${entry.date || '-'}`)
+  lines.push(`Time:        ${entry.localTime || '-'} (UTC ${entry.utcOffset || ''})`)
+  lines.push(`Collector:   ${entry.collector || '-'}`)
   lines.push('')
 
   // Location
   lines.push('LOCATION')
-  lines.push(`  Latitude:  ${entry.latitude || '—'}`)
-  lines.push(`  Longitude: ${entry.longitude || '—'}`)
+  lines.push(`  Latitude:  ${entry.latitude || '-'}`)
+  lines.push(`  Longitude: ${entry.longitude || '-'}`)
   if (entry.accuracy) lines.push(`  Accuracy:  ${entry.accuracy} m`)
   lines.push('')
 
   // Site info
   lines.push('SITE')
-  lines.push(`  Landscape:   ${entry.landscape || '—'}`)
-  if (entry.disturbance) lines.push(`  Disturbance: ${entry.disturbance}`)
-  if (entry.organicMatterType) lines.push(`  Organic matter: ${entry.organicMatterType}`)
-  if (entry.terrestrialAquatic) lines.push(`  Environment: ${entry.terrestrialAquatic}`)
+  lines.push(`  Landscape:   ${entry.landscape || '-'}`)
+  lines.push(`  Hydrotiles:  ${entry.hydrotiles || '-'}`)
+  lines.push(`  Organic matter: ${entry.organicMatterType || '-'}`)
+  lines.push(`  Environment: ${entry.terrestrialAquatic || '-'}`)
   lines.push('')
 
   // Weather
   if (entry.weather && Object.keys(entry.weather).length > 0) {
     lines.push('WEATHER')
     const w = entry.weather
-    if (w.airTemperature !== undefined) lines.push(`  Air temp:  ${w.airTemperature} °C`)
-    if (w.cloudCover !== undefined) lines.push(`  Cloud:     ${w.cloudCover}`)
-    if (w.windSpeed !== undefined) lines.push(`  Wind:      ${w.windSpeed} m/s`)
-    if (w.precipitation !== undefined) lines.push(`  Precip:    ${w.precipitation}`)
+    lines.push(`  Air temp:  ${w.temperature !== undefined ? w.temperature + ' C' : '-'}`)
+    lines.push(`  Air humidity: ${w.humidity !== undefined ? w.humidity + '%' : '-'}`)
+    lines.push(`  Cloud:     ${w.cloudCover !== undefined ? w.cloudCover + '%' : '-'}`)
+    lines.push(`  Precipitation: ${w.precipitation || '-'}`)
+    lines.push(`  Wind speed: ${w.windSpeed !== undefined ? w.windSpeed + ' m/s' : '-'}`)
+    lines.push(`  Wind direction: ${w.windDirection || '-'}`)
     lines.push('')
   }
 
@@ -150,13 +152,13 @@ function formatEntryAsText(entry) {
   const hasSoil = entry.soilMoisture || entry.soilTemperature || entry.activeLayerDepth
   if (hasSoil) {
     lines.push('SOIL')
-    if (entry.soilTemperature) lines.push(`  Soil temp:    ${entry.soilTemperature} °C`)
-    if (entry.soilMoisture) lines.push(`  Soil moisture: ${entry.soilMoisture}`)
-    if (entry.soilMoistureType) lines.push(`  Moisture type: ${entry.soilMoistureType}`)
-    if (entry.activeLayerDepth) lines.push(`  Active layer: ${entry.activeLayerDepth} cm`)
+    lines.push(`  Soil temp:    ${entry.soilTemperature ? entry.soilTemperature + ' C' : '-'}`)
+    lines.push(`  Soil moisture: ${entry.soilMoisture !== undefined ? entry.soilMoisture + '%' : '-'}`)
+    lines.push(`  Moisture type: ${entry.soilMoistureType || '-'}`)
+    lines.push(`  Active layer: ${entry.activeLayerDepth ? entry.activeLayerDepth + ' cm' : '-'}`)
     const alDepths = [entry.alDepth1, entry.alDepth2, entry.alDepth3].filter(Boolean)
     if (alDepths.length) lines.push(`  AL depths:    ${alDepths.join(', ')} cm`)
-    if (entry.standingWater) lines.push(`  Standing water: yes${entry.standingWaterDepth ? `, ${entry.standingWaterDepth} cm` : ''}`)
+    lines.push(`  Standing water: ${entry.standingWater ? 'yes' + (entry.standingWaterDepth ? `, ${entry.standingWaterDepth} cm` : '') : '-'}`)
     lines.push('')
   }
 
@@ -176,11 +178,13 @@ function formatEntryAsText(entry) {
   }
 
   // Morphology
-  if (entry.morphology) {
+  const hasMorphology = entry.morphology || entry.disturbance || entry.waterFeatures || entry.morphologyNotes
+  if (hasMorphology) {
     lines.push('MORPHOLOGY')
-    lines.push(`  Topography: ${entry.morphology}`)
-    if (entry.waterFeatures) lines.push(`  Water: ${entry.waterFeatures}`)
-    if (entry.morphologyNotes) lines.push(`  Notes: ${entry.morphologyNotes}`)
+    lines.push(`  Topography: ${entry.morphology || '-'}`)
+    lines.push(`  Disturbance: ${entry.disturbance || '-'}`)
+    lines.push(`  Water: ${entry.waterFeatures || '-'}`)
+    lines.push(`  Notes: ${entry.morphologyNotes || '-'}`)
     lines.push('')
   }
 
@@ -221,7 +225,9 @@ export async function saveSiteToDevice(entry, rootHandle) {
   }
 
   const date = entry.date || new Date().toISOString().split('T')[0]
+  const time = entry.localTime ? entry.localTime.replace(':', '-') : '00-00'
   const siteNumber = String(entry.siteNumber).padStart(3, '0')
+  const baseFileName = `Site_${siteNumber}_${date}_${time}`
 
   try {
     // Create date folder
@@ -231,7 +237,7 @@ export async function saveSiteToDevice(entry, rootHandle) {
     const siteFolder = await dateFolder.getDirectoryHandle(`Site_${siteNumber}`, { create: true })
 
     // Save main JSON file
-    const jsonFileName = `site_${siteNumber}.json`
+    const jsonFileName = `${baseFileName}_general.json`
     const jsonFile = await siteFolder.getFileHandle(jsonFileName, { create: true })
     const jsonWriter = await jsonFile.createWritable()
     const jsonContent = JSON.stringify(entry, null, 2)
@@ -239,7 +245,7 @@ export async function saveSiteToDevice(entry, rootHandle) {
     await jsonWriter.close()
 
     // Save human-readable text file
-    const txtFileName = `site_${siteNumber}.txt`
+    const txtFileName = `${baseFileName}_general.txt`
     const txtFile = await siteFolder.getFileHandle(txtFileName, { create: true })
     const txtWriter = await txtFile.createWritable()
     await txtWriter.write(formatEntryAsText(entry))
@@ -254,21 +260,21 @@ export async function saveSiteToDevice(entry, rootHandle) {
     // Save entry photos
     if (entry.entryPhotos && Array.isArray(entry.entryPhotos)) {
       for (const [index, photo] of entry.entryPhotos.entries()) {
-        await savePhotoToDevice(photosFolder, photo, `photo_${index + 1}`)
+        await savePhotoToDevice(photosFolder, photo, `${baseFileName}_photo_${index + 1}`)
       }
     }
 
     // Save vegetation short photos
     if (entry.vegetationShortPhotos && Array.isArray(entry.vegetationShortPhotos)) {
       for (const [index, photo] of entry.vegetationShortPhotos.entries()) {
-        await savePhotoToDevice(photosFolder, photo, `vegetation_short_${index + 1}`)
+        await savePhotoToDevice(photosFolder, photo, `${baseFileName}_vegetation_short_${index + 1}`)
       }
     }
 
     // Save vegetation long photos
     if (entry.vegetationLongPhotos && Array.isArray(entry.vegetationLongPhotos)) {
       for (const [index, photo] of entry.vegetationLongPhotos.entries()) {
-        await savePhotoToDevice(photosFolder, photo, `vegetation_long_${index + 1}`)
+        await savePhotoToDevice(photosFolder, photo, `${baseFileName}_vegetation_long_${index + 1}`)
       }
     }
 
@@ -277,7 +283,7 @@ export async function saveSiteToDevice(entry, rootHandle) {
       const voiceFolder = await siteFolder.getDirectoryHandle('voice_notes', { create: true })
       for (const [index, note] of entry.voiceNotes.entries()) {
         if (note.data) {
-          await saveAudioToDevice(voiceFolder, note, `voice_note_${index + 1}`)
+          await saveAudioToDevice(voiceFolder, note, `${baseFileName}_voice_note_${index + 1}`)
         }
       }
     }
@@ -289,7 +295,7 @@ export async function saveSiteToDevice(entry, rootHandle) {
     }
   } catch (error) {
     console.error('Error saving to device:', error)
-    throw new Error(`Failed to save site to device: ${error.message}`)
+    throw new Error(`Failed to save site to device: ${error.message}`, { cause: error })
   }
 }
 

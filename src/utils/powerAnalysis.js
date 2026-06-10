@@ -35,7 +35,7 @@ export function calculateRequiredSampleSize(
 
   const additionalPoints = Math.max(10, Math.min(adjustedRequired - baselineN, 100))
 
-  let recommendation = ''
+  let recommendation
   if (effectSize < 0.3) {
     recommendation = 'Very small effect - requires many samples'
   } else if (effectSize < 0.5) {

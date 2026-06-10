@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { validateTemperature, validateWindSpeed } from '../utils/validation'
 
-export default function Weather({ control, watch, setValue, previousEntry, bluetoothReading, bluetoothError, startBluetoothRead }) {
+export default function Weather({ watch, setValue, previousEntry }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [tempError, setTempError] = useState(null)
   const [windError, setWindError] = useState(null)
@@ -39,26 +39,11 @@ export default function Weather({ control, watch, setValue, previousEntry, bluet
               📋 Copy
             </button>
           )}
-          {startBluetoothRead && (
-            <button
-              type="button"
-              onClick={startBluetoothRead}
-              disabled={bluetoothReading}
-              style={{ padding: '8px 12px', backgroundColor: bluetoothReading ? '#FFC107' : 'var(--primary-color)', color: bluetoothReading ? '#000' : 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: bluetoothReading ? 'wait' : 'pointer', fontSize: '12px' }}
-            >
-              📡 {bluetoothReading ? 'Reading...' : 'Read Sensor'}
-            </button>
-          )}
         </div>
       </div>
 
       {isExpanded && (
         <div className="section-content">
-          {bluetoothError && (
-            <div style={{ padding: '8px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', fontSize: '12px', marginBottom: '12px' }}>
-              {bluetoothError}
-            </div>
-          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div className="field-group">
@@ -176,46 +161,26 @@ export default function Weather({ control, watch, setValue, previousEntry, bluet
               )}
             </div>
 
-            <div></div>
-          </div>
-
-          <div className="field-group">
-            <label>Wind Direction</label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '6px',
-              marginBottom: '8px'
-            }}>
-              {[
-                { value: 'calm', label: '⊗ Calm' },
-                { value: 'N', label: '↑ N' },
-                { value: 'NE', label: '↗ NE' },
-                { value: 'E', label: '→ E' },
-                { value: 'SE', label: '↘ SE' },
-                { value: 'S', label: '↓ S' },
-                { value: 'SW', label: '↙ SW' },
-                { value: 'W', label: '← W' },
-                { value: 'NW', label: '↖ NW' }
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => updateWeather('windDirection', option.value)}
-                  style={{
-                    padding: '8px 6px',
-                    backgroundColor: weatherData.windDirection === option.value ? 'var(--primary-color)' : 'var(--bg-secondary)',
-                    color: weatherData.windDirection === option.value ? 'white' : 'var(--text-primary)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div className="field-group">
+              <label style={{ fontSize: '12px' }}>Calm</label>
+              <button
+                type="button"
+                onClick={() => updateWeather('windDirection', weatherData.windDirection === 'calm' ? null : 'calm')}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  backgroundColor: weatherData.windDirection === 'calm' ? 'var(--primary-color)' : 'var(--bg-secondary)',
+                  color: weatherData.windDirection === 'calm' ? 'white' : 'var(--text-primary)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {weatherData.windDirection === 'calm' ? '⊗ Calm (on)' : '⊗ Calm'}
+              </button>
             </div>
           </div>
 

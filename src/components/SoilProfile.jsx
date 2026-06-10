@@ -2,11 +2,10 @@ import { useState } from 'react'
 import {
   validateTemperature,
   validateSoilDepth,
-  validateActiveLayer,
   validateOrganicLayer
 } from '../utils/validation'
 
-export default function SoilProfile({ control, watch, setValue }) {
+export default function SoilProfile({ watch, setValue }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [errors, setErrors] = useState({})
   const data = watch()

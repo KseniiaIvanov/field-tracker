@@ -42,9 +42,6 @@ export default function Statistics({ setCurrentPage, allEntries }) {
     return [...new Set(allEntries.map(e => e.date))].sort().reverse()
   }, [allEntries])
 
-  const maxCount = useMemo(() => {
-    return Math.max(...landscapeDistribution.map(d => d.count), 1)
-  }, [landscapeDistribution])
 
   return (
     <div className="page-content">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import RasterViewer from './RasterViewer'
 
 const CATEGORIES = {
@@ -17,7 +17,6 @@ const CATEGORY_COLORMAPS = {
 }
 
 export default function RasterStack({
-  rgbRaster,
   rgbDataCache,
   rastersByCategory,
   rasterDataCache,
@@ -27,20 +26,6 @@ export default function RasterStack({
   allEntries,
   candidatePoints = []
 }) {
-  // Log ONLY when cache keys actually change (without useEffect to avoid infinite loop)
-  const prevLogRef = useRef(null)
-  const cacheKeysStr = Object.keys(rasterDataCache).sort().join(',')
-
-  if (cacheKeysStr !== prevLogRef.current) {
-    prevLogRef.current = cacheKeysStr
-    console.log(`🔍 RasterStack: rasterDataCache keys changed to [${cacheKeysStr}]`)
-
-    // Log which categories will be rendered
-    const renderableCategories = Object.entries(CATEGORIES)
-      .filter(([key]) => rastersByCategory[key] && rasterDataCache[key])
-      .map(([key]) => key)
-    console.log(`  ✅ Renderable categories: [${renderableCategories.join(', ')}]`)
-  }
   // Track which category rasters are visible (RGB always visible)
   const [visibleCategories, setVisibleCategories] = useState({
     vegetation: true,     // Visible by default - show polygon

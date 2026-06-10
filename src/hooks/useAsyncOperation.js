@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 /**
  * Custom hook for managing async operations with error handling
@@ -49,7 +49,7 @@ export function useAsyncOperation(asyncFn, executeOnMount = false) {
   }, [asyncFn])
 
   // Auto-execute on mount if requested
-  React.useEffect(() => {
+  useEffect(() => {
     if (executeOnMount) {
       execute()
     }

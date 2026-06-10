@@ -67,12 +67,6 @@ export default function Home({ setCurrentPage, allEntries, onSelectStorageFolder
 
   // Calculate statistics
   const lastEntry = allEntries.length > 0 ? allEntries[allEntries.length - 1] : null
-  const todayEntries = allEntries.filter(e => e.date === new Date().toISOString().split('T')[0]).length
-
-  // Get average temperature from today's entries
-  const avgTemp = allEntries.length > 0
-    ? (allEntries.reduce((sum, e) => sum + (e.weather?.temperature || 0), 0) / allEntries.length).toFixed(1)
-    : 'N/A'
 
   return (
     <div className="home-page" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}>

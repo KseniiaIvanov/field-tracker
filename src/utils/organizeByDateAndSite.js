@@ -50,7 +50,7 @@ export async function createOrganizedZip(entries) {
   Object.keys(entriesByDate).sort().forEach(date => {
     const dateEntries = entriesByDate[date]
 
-    dateEntries.forEach((entry, index) => {
+    dateEntries.forEach((entry) => {
       const siteNumber = String(entry.siteNumber).padStart(3, '0')
       const siteFolderPath = `${rootFolderName}/${date}/Site_${siteNumber}`
 

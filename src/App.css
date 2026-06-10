@@ -140,7 +140,7 @@ body {
 
 /* MAIN CONTAINER */
 .form-container {
-  max-width: 900px;
+  max-width: 480px;
   margin: 0 auto;
 }
 
@@ -1078,7 +1078,7 @@ h3 {
 
 /* PAGE CONTENT */
 .page-content {
-  max-width: 900px;
+  max-width: 480px;
   margin: 0 auto;
   padding-top: calc(env(safe-area-inset-top, 20px) + 56px);
   padding-bottom: var(--spacing-xl);
@@ -1218,8 +1218,8 @@ h3 {
 }
 
 .btn-template {
-  background-color: var(--bg-secondary);
-  color: var(--accent-color);
+  background-color: var(--accent-color);
+  color: white;
   border: 2px solid var(--accent-color);
 }
 

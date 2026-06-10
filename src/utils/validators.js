@@ -208,7 +208,7 @@ export const timestampValidators = {
       return { isValid: false, error: `Invalid date format: "${date}" (expected YYYY-MM-DD)` }
     }
 
-    const [, year, month, day] = match.map(Number)
+    const [, , month, day] = match.map(Number)
 
     if (month < 1 || month > 12) {
       return { isValid: false, error: `Invalid month: ${month}` }

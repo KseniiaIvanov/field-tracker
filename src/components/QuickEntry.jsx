@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
-import { validateCoordinates, validateSiteNumber } from '../utils/validation'
 
 const LANDSCAPE_DEFAULTS = ['RTS', 'Polygon', 'Trench', 'Shore', 'Pond', 'Hummock', 'Palsa', 'Thermokarst', 'Degraded', 'Wet Sedge', 'Dry Moss', 'Mixed']
 const DISTURBANCE_OPTIONS = ['None', 'Thermokarst', 'Solifluction', 'Erosion', 'Trampling', 'Other']
 
-export default function QuickEntry({ control, watch, setValue, onSave, onBack, allEntries }) {
+export default function QuickEntry({ watch, setValue, onSave, onBack }) {
   const [landscapeSuggestions, setLandscapeSuggestions] = useState([])
-  const [allLandscapes, setAllLandscapes] = useState(LANDSCAPE_DEFAULTS)
+  const [allLandscapes] = useState(LANDSCAPE_DEFAULTS)
   const [isCollectingGPS, setIsCollectingGPS] = useState(false)
   const [gpsStatus, setGpsStatus] = useState('')
   const [gpsProgress, setGpsProgress] = useState(0)

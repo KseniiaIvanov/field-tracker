@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx'
 import { useNotificationContext } from '../context/NotificationContext'
 
 export default function ImportSites({ setCurrentPage, onSitesImported }) {
-  const { showError, showSuccess, showWarning } = useNotificationContext()
+  const { showError, showSuccess } = useNotificationContext()
 
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState([])

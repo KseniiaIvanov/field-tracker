@@ -1,0 +1,12 @@
+{
+  "name": "fct-paper-tools",
+  "private": true,
+  "description": "Manuscript build tooling for the Field Campaign Tracker paper. NOT part of the application — kept separate so the app repository stays clean.",
+  "scripts": {
+    "build:docx": "node build_docx.cjs",
+    "build:docx:submission": "SUBMISSION=1 node build_docx.cjs"
+  },
+  "devDependencies": {
+    "docx": "^9.5.1"
+  }
+}

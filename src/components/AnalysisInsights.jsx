@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import logger from '../utils/logger'
 
 /**
  * Display interpretation and insights about analysis results

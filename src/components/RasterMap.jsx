@@ -8,9 +8,7 @@ import 'leaflet-draw'
 export default function RasterMap({
   sites,
   rasterBounds,
-  onPolygonChange,
-  showHeatmap,
-  rasterData
+  onPolygonChange
 }) {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
@@ -102,7 +100,7 @@ export default function RasterMap({
       return isFinite(lat) && isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
     })
 
-    validSites.forEach((site, idx) => {
+    validSites.forEach((site) => {
       const lat = parseFloat(site.latitude)
       const lon = parseFloat(site.longitude)
 

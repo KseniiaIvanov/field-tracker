@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import localforage from 'localforage'
-import { useAsyncStorage } from './hooks/useAsyncStorage'
 import { useNotificationContext } from './context/NotificationContext'
 import { validateCompleteEntry } from './utils/validators'
 import { processPhoto } from './utils/photoMetadata'
 import { isFileSystemAccessAvailable, requestRootDirectory, getRootDirectory, setRootDirectory, saveSiteToDevice, restoreRootDirectory } from './utils/fileSystemAccess'
-import { discoverAndReadDevice } from './utils/bluetoothManager'
 import ErrorBoundary from './components/ErrorBoundary'
 import QuickEntry from './components/QuickEntry'
 import PointInfo from './components/PointInfo'
 import Weather from './components/Weather'
 import VegetationShort from './components/VegetationShort'
-import VegetationLong from './components/VegetationLong'
 import SoilProfile from './components/SoilProfile'
 import Morphology from './components/Morphology'
 import Export from './components/Export'
@@ -55,15 +52,12 @@ function App() {
   const [allEntries, setAllEntries] = useState([])
   const [currentPage, setCurrentPage] = useState('home') // home, diary, categories, species, settings, data, help, metadata, repeat
   const [currentStep, setCurrentStep] = useState(1) // Wizard step (1-7)
-  const [carbonFluxMeasurementDefault, setCarbonFluxMeasurementDefault] = useState(false)
+  const [, setCarbonFluxMeasurementDefault] = useState(false)
   const [quickMode, setQuickMode] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [deviceStoragePath, setDeviceStoragePath] = useState(null)
-  const [storageReady, setStorageReady] = useState(false)
+  const [, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
-  const [bluetoothReading, setBluetoothReading] = useState(false)
-  const [bluetoothError, setBluetoothError] = useState(null)
-  const [bluetoothDeviceName, setBluetoothDeviceName] = useState(null)
 
   const WIZARD_STEPS = [
     { num: 1, name: 'Site Information', component: 'PointInfo' },
@@ -228,7 +222,6 @@ function App() {
         const avgLat = readings.reduce((sum, r) => sum + r.lat, 0) / readings.length
         const avgLon = readings.reduce((sum, r) => sum + r.lon, 0) / readings.length
         const minAccuracy = Math.round(Math.min(...readings.map(r => r.accuracy)))
-        const avgAccuracy = Math.round(readings.reduce((sum, r) => sum + r.accuracy, 0) / readings.length)
 
         setValue('latitude', avgLat.toFixed(6))
         setValue('longitude', avgLon.toFixed(6))
@@ -244,29 +237,6 @@ function App() {
   }, [gpsAveraging, setValue, showSuccess])
 
   // Bluetooth sensor reading handler
-  const startBluetoothRead = async () => {
-    setBluetoothReading(true)
-    setBluetoothError(null)
-    try {
-      const result = await discoverAndReadDevice()
-      if (result.success) {
-        setValue('weather.temperature', result.temperature)
-        setValue('weather.humidity', result.humidity)
-        setBluetoothDeviceName('Sensor')
-        showSuccess(`✅ Sensor read: ${result.temperature}°C, ${result.humidity}%`)
-      } else {
-        setBluetoothError(result.error)
-      }
-    } catch (err) {
-      setBluetoothError('❌ Unexpected error. Try again.')
-      console.error('Bluetooth read error:', err)
-    } finally {
-      setBluetoothReading(false)
-      // Auto-clear error after 5 seconds
-      setTimeout(() => setBluetoothError(null), 5000)
-    }
-  }
-
   // Autosave draft 10s after last change (photos excluded to stay within localStorage 5MB limit)
   useEffect(() => {
     if (currentPage !== 'diary') return
@@ -345,20 +315,6 @@ function App() {
         showError(`Failed to select folder: ${error.message}`)
       }
     }
-  }
-
-  const downloadEntryAsFile = (entry) => {
-    const filename = `entry_site${entry.siteNumber}_${entry.date}.json`
-    const json = JSON.stringify(entry, null, 2)
-    const blob = new Blob([json], { type: 'application/json' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
   }
 
   const downloadEntryWithPhotos = async (entry) => {
@@ -567,8 +523,8 @@ function App() {
 
               {/* WIZARD STEPS */}
               <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} gpsAveraging={gpsAveraging} setGpsAveraging={setGpsAveraging} bluetoothReading={bluetoothReading} bluetoothError={bluetoothError} startBluetoothRead={startBluetoothRead} />}
-                {currentStep === 2 && <Weather control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} bluetoothReading={bluetoothReading} bluetoothError={bluetoothError} startBluetoothRead={startBluetoothRead} />}
+                {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} gpsAveraging={gpsAveraging} setGpsAveraging={setGpsAveraging} />}
+                {currentStep === 2 && <Weather control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} />}
                 {currentStep === 3 && (
                   <div>
                     <VegetationShort control={control} watch={watch} setValue={setValue} />

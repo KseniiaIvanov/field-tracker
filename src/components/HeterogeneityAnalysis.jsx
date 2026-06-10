@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import localforage from 'localforage'
 import logger from '../utils/logger'
 import RasterHistogram from './RasterHistogram'
-import MultiCategoryAnalysis from './MultiCategoryAnalysis'
 import RasterStack from './RasterStack'
 import RasterMetadataDisplay from './RasterMetadataDisplay'
 import MeasurementPlanner from './MeasurementPlanner'
@@ -22,8 +21,8 @@ import {
   validatePolygon
 } from '../utils/spatialOperations'
 import { parseShapefileZip } from '../utils/shapefileHandler'
-import { determineCRS, transformCoordinates } from '../utils/coordinateTransform'
-import { saveRasterData, loadRasterData, deleteRasterData, initDB } from '../utils/indexedDBManager'
+import { transformCoordinates } from '../utils/coordinateTransform'
+import { deleteRasterData, initDB } from '../utils/indexedDBManager'
 
 const CATEGORIES = {
   moisture: { label: 'Moisture', color: '#2196F3', order: 0 },
@@ -276,7 +275,7 @@ export default function HeterogeneityAnalysis({ allEntries }) {
   }
 
   // Load RGB raster data
-  const loadRgbRaster = async (rgbInfo) => {
+  const loadRgbRaster = async () => {
     try {
       logger.debug('HeterogeneityAnalysis.jsx', `🎨 Loading RGB raster...`)
       let stored = await localforage.getItem('rgbData')
@@ -479,8 +478,8 @@ export default function HeterogeneityAnalysis({ allEntries }) {
         ]
 
         logger.debug('HeterogeneityAnalysis.jsx', `   🔬 Converting polygon bounds to pixels:`)
-        logger.debug('HeterogeneityAnalysis.jsx', `      Geotransform origin: [${c.toFixed(4)}, ${f.toFixed(4)}]`)
-        logger.debug('HeterogeneityAnalysis.jsx', `      Geotransform scale: [${a.toFixed(6)}, ${e.toFixed(6)}]`)
+        logger.debug('HeterogeneityAnalysis.jsx', `      Geotransform origin: [${geotransform[0].toFixed(4)}, ${geotransform[3].toFixed(4)}]`)
+        logger.debug('HeterogeneityAnalysis.jsx', `      Geotransform scale: [${geotransform[1].toFixed(6)}, ${geotransform[5].toFixed(6)}]`)
 
         corners.forEach(([lon, lat], idx) => {
           const a = geotransform[1], b = geotransform[2], c = geotransform[0]
@@ -1473,7 +1472,7 @@ export default function HeterogeneityAnalysis({ allEntries }) {
           <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
             Analysis results: {Object.keys(analysisResults).length} categories
             {' | '}
-            Selected: {Object.entries(analysisLayerSelection).filter(([k, v]) => v).map(([k]) => k).join(', ') || 'none'}
+            Selected: {Object.entries(analysisLayerSelection).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}
           </div>
 
           {/* Selected Layer Histograms - Compact Grid */}

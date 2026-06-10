@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function VegetationLong({ control, watch, setValue }) {
+export default function VegetationLong({ watch, setValue }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [customSpecies, setCustomSpecies] = useState('')
   const data = watch()

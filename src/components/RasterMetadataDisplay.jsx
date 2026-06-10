@@ -38,7 +38,6 @@ export default function RasterMetadataDisplay({ rastersByCategory, categorySetti
       {Object.entries(rastersByCategory).map(([category, rasterInfo]) => {
         const categoryData = CATEGORIES[category] || { label: category, color: '#757575' }
         if (!categoryData) return null
-        const isEnabled = categorySettings[category]?.enabled
 
         // Validate CRS
         const crsCheck = crsValidators.epsg(rasterInfo.crs)

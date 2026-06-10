@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import logger from '../utils/logger'
 import { pointInPolygon, isNoDataValue } from '../utils/rasterProcessing'
 import RasterViewer from './RasterViewer'
-import AnalysisInsights from './AnalysisInsights'
 import PriorityHeatMapViewer from './PriorityHeatMapViewer'
 import {
   createPriorityGrid,
@@ -56,7 +55,7 @@ export default function MeasurementPlanner({
         try {
           const ur = findUnsampledRanges(result.siteHistogram, result.areaHistogram)
           missingPercent = ur.missingPercent || 0
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
       }
 
       const n = result?.siteHistogram?.stats?.count || result?.sitesAnalyzed || 0
@@ -84,7 +83,7 @@ export default function MeasurementPlanner({
         try {
           const ur = findUnsampledRanges(result.siteHistogram, result.areaHistogram)
           if (ur.bins.length > maxUnsampledBins) maxUnsampledBins = ur.bins.length
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
       }
     })
     if (maxUnsampledBins > 0) {
@@ -263,7 +262,7 @@ export default function MeasurementPlanner({
               enrichedPoint.values[category] = parseFloat(value.toFixed(1))
             }
           }
-        } catch (err) { /* skip */ }
+        } catch { /* skip */ }
       })
       enrichedPoint.coverage = Object.keys(enrichedPoint.values).length
       return enrichedPoint

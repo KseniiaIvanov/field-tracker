@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import RasterViewer from './RasterViewer'
 
 const CATEGORIES = {
@@ -11,7 +11,6 @@ const CATEGORIES = {
 export default function MultiLayerRasterViewer({
   rastersByCategory,
   rasterDataCache,
-  rgbRaster,
   rgbDataCache,
   categorySettings,
   polygon,

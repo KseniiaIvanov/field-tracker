@@ -123,16 +123,17 @@ export async function parseShapefileZip(zipFile) {
     logger.error("shapefileHandler", 'Shapefile parsing error:', err)
 
     if (msg.includes('signature')) {
-      throw new Error('Invalid ZIP file format. Ensure you uploaded a valid ZIP archive.')
+      throw new Error('Invalid ZIP file format. Ensure you uploaded a valid ZIP archive.', { cause: err })
     }
     if (msg.includes('shp type') || msg.includes('geometry type') || msg.includes('Unsupported')) {
       throw new Error(
         `Shapefile parsing issue detected. ` +
         `This might be due to coordinate format or 3D data. ` +
         `Try: 1) Export as simple polygon in QGIS, 2) Simplify geometry, ` +
-        `3) Or draw polygon manually on the raster instead.`
+        `3) Or draw polygon manually on the raster instead.`,
+        { cause: err }
       )
     }
-    throw new Error(`Shapefile parsing failed: ${msg}`)
+    throw new Error(`Shapefile parsing failed: ${msg}`, { cause: err })
   }
 }

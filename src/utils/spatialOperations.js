@@ -98,7 +98,7 @@ export function calculateCoverageAssessment(siteStats, areaStats) {
 
   // Standard deviation match (site std should be similar to area std)
   // If area has no variation (std=0), perfect match is when site also has no variation
-  let stdMatch = 1
+  let stdMatch
   if (areaStd > 0) {
     const stdDiff = Math.abs(siteStd - areaStd)
     stdMatch = Math.max(0, 1 - stdDiff / areaStd)

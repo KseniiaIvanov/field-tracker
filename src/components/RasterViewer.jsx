@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useCallback, memo } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react'
 import logger from '../utils/logger'
 import { pixelToCoordinateLonLat, determineCRS, transformCoordinates } from '../utils/coordinateTransform'
-import { coordinateToPixel, pixelToCoordinate } from '../utils/rasterProcessing'
+import { coordinateToPixel } from '../utils/rasterProcessing'
 import { rafDebounce } from '../utils/performanceUtils'
 
 // Viridis color map (0-1 normalized)
@@ -141,9 +141,7 @@ function RasterViewerComponent({
   opacity = 1,
   // Synchronized zoom/pan from parent (for multi-layer view)
   zoom: externalZoom = null,
-  onZoomChange = null,
-  panOffset: externalPanOffset = null,
-  onPanOffsetChange = null
+  onZoomChange = null
 }) {
   const canvasRef = useRef(null)
   const containerRef = useRef(null)
@@ -152,11 +150,10 @@ function RasterViewerComponent({
   const [polygonCoords, setPolygonCoords] = useState([])
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
   const [selectedColormap, setSelectedColormap] = useState(colormap)
-  const [rasterStats, setRasterStats] = useState(null)
+  const [, setRasterStats] = useState(null)
   const [showRasterCRS, setShowRasterCRS] = useState(false)
   const [rasterCRS, setRasterCRS] = useState('EPSG:4326')
   const [localZoom, setLocalZoom] = useState(1)
-  const [localPanOffset, setLocalPanOffset] = useState({ x: 0, y: 0 })
   const [isRGBRaster, setIsRGBRaster] = useState(false)
 
   // Use external zoom if provided (multi-layer), otherwise use local
@@ -171,15 +168,6 @@ function RasterViewerComponent({
     }
   }
 
-  // Use external pan offset if provided (multi-layer), otherwise use local
-  const panOffset = externalPanOffset !== null ? externalPanOffset : localPanOffset
-  const handlePanOffsetLocal = (newOffset) => {
-    if (onPanOffsetChange) {
-      onPanOffsetChange(newOffset)
-    } else {
-      setLocalPanOffset(newOffset)
-    }
-  }
 
   // Debug: log when using external zoom/pan
   if (externalZoom !== null || onZoomChange) {
@@ -199,22 +187,10 @@ function RasterViewerComponent({
     }
   }, [polygon])
 
-  // Debounced zoom setter for smooth wheel/touchpad zoom
-  const debouncedSetZoom = useCallback(
-    rafDebounce((newZoom) => {
-      const clamped = Math.max(0.5, Math.min(5, newZoom))
-      if (onZoomChange) {
-        onZoomChange(clamped)
-      } else {
-        setLocalZoom(clamped)
-      }
-    }),
-    [onZoomChange]
-  )
 
   // Debounced pan update for smooth dragging
-  const debouncedSetPanStart = useCallback(
-    rafDebounce((coords) => {
+  const debouncedSetPanStart = useMemo(
+    () => rafDebounce((coords) => {
       setPanStart(coords)
     }),
     []
@@ -414,7 +390,7 @@ function RasterViewerComponent({
 
       logger.debug("RasterViewer", `🎯 Processing ${candidatePoints.length} candidate points for drawing`)
 
-      candidatePoints.forEach((point, idx) => {
+      candidatePoints.forEach((point) => {
         try {
           const lat = parseFloat(point.lat)
           const lon = parseFloat(point.lon)
@@ -438,12 +414,12 @@ function RasterViewerComponent({
                 if (isFinite(pixelX) && isFinite(pixelY)) {
                   pixelPos = { x: pixelX, y: pixelY }
                 } else {
-                  throw new Error('Fallback positioning produced NaN')
+                  throw new Error('Fallback positioning produced NaN', { cause: transformErr })
                 }
               } else {
-                throw new Error('Bounds are degenerate or invalid')
+                throw new Error('Bounds are degenerate or invalid', { cause: transformErr })
               }
-            } catch (fallbackErr) {
+            } catch {
               candidatesError++
               return
             }
@@ -461,7 +437,7 @@ function RasterViewerComponent({
 
           candidatesDrawn++
           candidatePointsData.push({ pixelPos, point })
-        } catch (err) {
+        } catch {
           candidatesError++
         }
       })
@@ -517,7 +493,7 @@ function RasterViewerComponent({
             if (!isFinite(lon) || !isFinite(lat)) return '[invalid]'
             return `[${lon.toFixed(4)}, ${lat.toFixed(4)}]`
           }).join(', ')}`)
-        } catch (e) {
+        } catch {
           logger.debug("RasterViewer", `   Sample sites: (error logging sites)`)
         }
       }
@@ -563,10 +539,10 @@ function RasterViewerComponent({
                     logger.warn("RasterViewer", `  ⚠️ Using fallback positioning (coordinate transform failed)`)
                   }
                 } else {
-                  throw new Error('Fallback positioning produced NaN')
+                  throw new Error('Fallback positioning produced NaN', { cause: transformErr })
                 }
               } else {
-                throw new Error('Bounds are degenerate or invalid')
+                throw new Error('Bounds are degenerate or invalid', { cause: transformErr })
               }
             } catch (fallbackErr) {
               sitesError++
@@ -591,10 +567,9 @@ function RasterViewerComponent({
               // For UTM rasters, also show native CRS coordinates
               if (rasterData.crs !== 'EPSG:4326') {
                 try {
-                  const { transformCoordinates } = require('../utils/coordinateTransform')
                   const nativeCRS = transformCoordinates(lon, lat, 'EPSG:4326', rasterData.crs)
                   extraInfo = ` (${rasterData.crs}: [${nativeCRS.lon.toFixed(1)}, ${nativeCRS.lat.toFixed(1)}])`
-                } catch (e) {
+                } catch {
                   extraInfo = ' (transform failed)'
                 }
               }
@@ -674,10 +649,10 @@ function RasterViewerComponent({
                 if (isFinite(pixelX) && isFinite(pixelY)) {
                   pixelPos = { x: pixelX, y: pixelY }
                 } else {
-                  throw new Error('Fallback produced NaN')
+                  throw new Error('Fallback produced NaN', { cause: transformErr })
                 }
               } else {
-                throw new Error('Bounds invalid')
+                throw new Error('Bounds invalid', { cause: transformErr })
               }
             } catch (fallbackErr) {
               polygonErrors.push(fallbackErr.message)
@@ -750,12 +725,12 @@ function RasterViewerComponent({
                   if (isFinite(pixelX) && isFinite(pixelY)) {
                     pixelPos = { x: pixelX, y: pixelY }
                   } else {
-                    throw new Error('Fallback produced NaN')
+                    throw new Error('Fallback produced NaN', { cause: transformErr })
                   }
                 } else {
-                  throw new Error('Bounds invalid')
+                  throw new Error('Bounds invalid', { cause: transformErr })
                 }
-              } catch (fallbackErr) {
+              } catch {
                 if (i === 0) {
                   logger.warn("RasterViewer", `  Polygon outline: Using fallback positioning`)
                 }
@@ -799,12 +774,12 @@ function RasterViewerComponent({
                   if (isFinite(pixelX) && isFinite(pixelY)) {
                     pixelPos = { x: pixelX, y: pixelY }
                   } else {
-                    throw new Error('Fallback produced NaN')
+                    throw new Error('Fallback produced NaN', { cause: transformErr })
                   }
                 } else {
-                  throw new Error('Bounds invalid')
+                  throw new Error('Bounds invalid', { cause: transformErr })
                 }
-              } catch (fallbackErr) {
+              } catch {
                 if (i === 0) {
                   logger.warn("RasterViewer", `  Polygon yellow line: Using fallback positioning`)
                 }
@@ -840,38 +815,30 @@ function RasterViewerComponent({
         try {
           // Use zoneLevel if available (new weighted system), otherwise use numeric priority (legacy)
           let zoneLevel = point.zoneLevel
-          let color, label
+          let color
 
           if (zoneLevel) {
             // New system with weighted priorities
             if (zoneLevel === 'critical') {
               color = '#FF1744' // Red - Critical
-              label = 'Critical'
             } else if (zoneLevel === 'high') {
               color = '#FF6F00' // Orange - High
-              label = 'High'
             } else if (zoneLevel === 'medium') {
               color = '#FFC400' // Amber - Medium
-              label = 'Medium'
             } else {
               color = '#76FF03' // Light green - Low
-              label = 'Low'
             }
           } else {
             // Legacy system with numeric priority (1-4)
             const priority = point.priority || 1
             if (priority >= 4) {
               color = '#FF1744' // Red - Critical
-              label = 'Critical'
             } else if (priority >= 3) {
               color = '#FF6F00' // Orange - High
-              label = 'High'
             } else if (priority >= 2) {
               color = '#FFC400' // Amber - Medium
-              label = 'Medium'
             } else {
               color = '#76FF03' // Light green - Low
-              label = 'Low'
             }
           }
 
@@ -957,7 +924,7 @@ function RasterViewerComponent({
     }
   }, [isPanning, readOnly, rasterData, polygonCoords])
 
-  const handleCanvasDoubleClick = useCallback((e) => {
+  const handleCanvasDoubleClick = useCallback(() => {
     if (readOnly || polygonCoords.length < 3) {
       if (polygonCoords.length < 3) {
         alert(`Need at least 3 points. Current: ${polygonCoords.length}`)
@@ -1219,7 +1186,7 @@ function RasterViewerComponent({
           🔍+ Zoom In
         </button>
         <button
-          onClick={() => setZoom(1)}
+          onClick={() => { if (onZoomChange) { onZoomChange(1) } else { setLocalZoom(1) } }}
           style={{
             padding: '6px 12px',
             backgroundColor: 'var(--bg-secondary)',

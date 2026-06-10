@@ -1,0 +1,43 @@
+field_name,group,data_type,unit,controlled_vocabulary_or_example,darwin_core_term,notes
+siteNumber,Site information,integer,count,"auto-incrementing, 1, 2, 3 …",,Unique within a campaign; zero-padded in file names (Site_001)
+date,Site information,date,ISO 8601 (YYYY-MM-DD),2026-07-15,eventDate,Pre-filled and editable
+localTime,Site information,time,HH:MM (local),14:32,eventTime,Local clock time at the device
+utcOffset,Site information,string,hours from UTC,-06:00,,Coordinated Universal Time offset
+collector,Site information,string,free text,J. Smith,recordedBy,Persisted across sites; editable per site
+landscape,Site description,string,free text with autocomplete,upland tundra,habitat,User-extensible vocabulary
+disturbance,Site description,string,controlled vocabulary,"thermokarst | solifluction | erosion | trampling | none",,Disturbance class
+organicMatterType,Site description,string,controlled vocabulary,"peat | mineral | mixed",,Organic-matter type
+terrestrialAquatic,Site description,string,controlled vocabulary,"terrestrial | aquatic",,Setting selector
+latitude,Position,decimal,degrees (WGS 84),68.3601,decimalLatitude,From device GPS; on-device averaging available
+longitude,Position,decimal,degrees (WGS 84),-133.7220,decimalLongitude,From device GPS; on-device averaging available
+accuracy,Position,decimal,metres,5,coordinateUncertaintyInMeters,Reported GPS accuracy; drives the value-extraction buffer
+weather.temperature,Weather,decimal,°C,12.4,,Air temperature
+weather.humidity,Weather,integer,%,78,,Relative humidity
+weather.cloudCover,Weather,integer,%,40,,Cloud cover
+weather.precipitation,Weather,string,controlled vocabulary,"none | drizzle | rain | snow",,Precipitation class
+weather.windSpeed,Weather,decimal,m s-1,3.5,,Wind speed
+weather.windDirection,Weather,string,controlled vocabulary,"N | NE | E | … | calm",,Wind direction including a calm state
+soilTemperature,Soil,decimal,°C,6.1,,Soil temperature
+soilMoisture,Soil,integer,%,45,,Volumetric/relative soil moisture
+soilMoistureType,Soil,string,controlled vocabulary,"dry | moist | wet | saturated",,Moisture class
+activeLayerDepth,Soil,decimal,cm,42,,Representative active-layer (thaw) depth
+alDepth1,Soil,decimal,cm,40,,Active-layer probe replicate 1
+alDepth2,Soil,decimal,cm,43,,Active-layer probe replicate 2
+alDepth3,Soil,decimal,cm,44,,Active-layer probe replicate 3
+standingWater,Soil,boolean,true/false,true,,Presence of standing water
+standingWaterDepth,Soil,decimal,cm,8,,Standing-water depth when present
+vegetationShort.<type>.coverage,Vegetation (rapid),integer,class 0-2,"0 = absent | 1 = present <50% | 2 = dominant >50%",,Cover-abundance per plant functional type (Braun-Blanquet logic)
+vegetationShort.<type>.height,Vegetation (rapid),decimal,cm,15,,Canopy height per plant functional type
+vegetationShortNotes,Vegetation (rapid),string,free text,,,Free-text notes for rapid vegetation
+vegetationLong.species,Vegetation (detailed),string,species name,Eriophorum vaginatum,scientificName,From user-managed species library (CSV/Excel import)
+vegetationLong.cover,Vegetation (detailed),decimal,%,25,,Percentage cover for the species
+vegetationLong.notes,Vegetation (detailed),string,free text,,,Per-species notes
+morphology,Morphology,string,controlled vocabulary,"slope | depression | elevated | flat",,Topographic position
+waterFeatures,Morphology,string,controlled vocabulary,"none | pool | stream | polygon trough",,Surface water features
+morphologyNotes,Morphology,string,free text,,,Free-text morphology notes
+carbonFluxMeasurement,Measurement flags,boolean,true/false,true,,Marks sites with an associated carbon-flux measurement
+notes,General,string,free text,,occurrenceRemarks,General site notes
+entryPhotos,Media,file[],JPEG,Site_001_..._photo_1.jpg,associatedMedia,Geotagged; EXIF preserved in *_metadata.json
+vegetationShortPhotos,Media,file[],JPEG,Site_001_..._vegetation_short_1.jpg,associatedMedia,Rapid-vegetation photos
+vegetationLongPhotos,Media,file[],JPEG,Site_001_..._vegetation_long_1.jpg,associatedMedia,Detailed-vegetation photos
+voiceNotes,Media,file[],audio (webm/ogg/m4a),Site_001_..._voice_note_1.webm,associatedMedia,.m4a on iOS; .webm/.ogg on Android

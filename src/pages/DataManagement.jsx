@@ -1,9 +1,6 @@
-import { useState } from 'react'
 import Papa from 'papaparse'
 
 export default function DataManagement({ setCurrentPage, allEntries }) {
-  const [viewMode, setViewMode] = useState('list') // list, table
-
   const exportToCSV = () => {
     if (allEntries.length === 0) {
       alert('No entries to export')
@@ -78,24 +75,10 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
 
       <div className="section">
         <h3>Entries Overview</h3>
-        <div className="view-controls">
-          <button
-            className={`btn-view ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
-          >
-            📋 List View
-          </button>
-          <button
-            className={`btn-view ${viewMode === 'table' ? 'active' : ''}`}
-            onClick={() => setViewMode('table')}
-          >
-            📊 Table View
-          </button>
-        </div>
 
         {allEntries.length === 0 ? (
           <p className="info-text">No entries recorded yet. Start with Field Diary!</p>
-        ) : viewMode === 'list' ? (
+        ) : (
           <div className="entries-list">
             {allEntries.map((entry, idx) => (
               <div key={idx} className="entry-item">
@@ -110,33 +93,6 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
                 </div>
               </div>
             ))}
-          </div>
-        ) : (
-          <div className="entries-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Site</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Landscape</th>
-                  <th>Env.</th>
-                  <th>Temp (°C)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allEntries.map((entry, idx) => (
-                  <tr key={idx}>
-                    <td>{entry.siteNumber}</td>
-                    <td>{entry.date}</td>
-                    <td>{entry.localTime}</td>
-                    <td>{entry.landscape}</td>
-                    <td>{entry.terrestrialAquatic[0].toUpperCase()}</td>
-                    <td>{entry.weather?.temperature || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         )}
       </div>

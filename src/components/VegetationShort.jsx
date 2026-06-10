@@ -1,11 +1,12 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
-export default function VegetationShort({ control, watch, setValue }) {
+export default function VegetationShort({ watch, setValue }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [customInput, setCustomInput] = useState('')
+  const [optimisticData, setOptimisticData] = useState({})
   const data = watch()
 
-  const shortVegData = data.vegetationShort || {}
+  const shortVegData = { ...data.vegetationShort, ...optimisticData }
   const vegPhotos = data.vegetationShortPhotos || []
 
   const categories = [
@@ -21,14 +22,15 @@ export default function VegetationShort({ control, watch, setValue }) {
     'Litter Standing Dead'
   ]
 
-  const coverageOptions = [
-    { value: 0, label: '0 - Absent' },
-    { value: 1, label: '1 - Present (<50%)' },
-    { value: 2, label: '2 - Dominates (>50%)' }
-  ]
-
   const updateVegetation = (category, field, value) => {
-    const updated = { ...shortVegData }
+    // Optimistic update - show immediately
+    setOptimisticData(prev => ({
+      ...prev,
+      [category]: { ...(prev[category] || data.vegetationShort?.[category] || {}), [field]: value }
+    }))
+
+    // Persist to form state
+    const updated = { ...data.vegetationShort, ...optimisticData }
     if (!updated[category]) updated[category] = {}
     updated[category][field] = value
     setValue('vegetationShort', updated)

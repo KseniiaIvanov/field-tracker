@@ -6,7 +6,7 @@ export default function Export({ entries }) {
   const [expandIndividual, setExpandIndividual] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
-  const exportIndividualEntry = (entry, index) => {
+  const exportIndividualEntry = (entry) => {
     const filename = `entry_site${entry.siteNumber}_${entry.date}.json`
     const json = JSON.stringify(entry, null, 2)
     downloadFile(json, filename, 'application/json')
