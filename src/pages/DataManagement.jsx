@@ -60,6 +60,7 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
       row['Vegetation Notes'] = entry.vegetationShortNotes
       row['Photos'] = (entry.entryPhotos?.length || 0) + (entry.vegetationShortPhotos?.length || 0) + (entry.vegetationLongPhotos?.length || 0)
       row['Voice Notes'] = entry.voiceNotes?.length || 0
+      row['Entry Duration (s)'] = entry.entryDurationSeconds ?? ''
       return row
     })
 

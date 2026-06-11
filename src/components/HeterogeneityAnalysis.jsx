@@ -965,7 +965,7 @@ export default function HeterogeneityAnalysis({ allEntries }) {
         const areaRangeMin = parseFloat(areaHistogram.stats.min)
         const areaRangeMax = parseFloat(areaHistogram.stats.max)
         const siteHistogram = calculateHistogram(validSiteValues, 20, areaRangeMin, areaRangeMax)
-        const coverage = calculateCoverageAssessment(siteHistogram.stats, areaHistogram.stats)
+        const coverage = calculateCoverageAssessment(siteHistogram.stats, areaHistogram.stats, siteHistogram.bins, areaHistogram.bins)
 
         newResults[category] = {
           sitesAnalyzed: sitesInArea.length,

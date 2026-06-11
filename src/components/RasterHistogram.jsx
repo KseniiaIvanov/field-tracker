@@ -287,7 +287,7 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
           marginBottom: '16px'
         }}>
           {/* Main metric: Distribution Match */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '4px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: coverage.overlapCoefficient !== null ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr', gap: '10px', marginBottom: '4px' }}>
             <div>
               <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '1px', fontWeight: '600', whiteSpace: 'nowrap' }}>
                 DISTR. MATCH
@@ -304,6 +304,16 @@ function RasterHistogram({ siteStats, areaStats, coverage, columnCount = 1 }) {
                 {coverage.rangeCoverage}%
               </div>
             </div>
+            {coverage.overlapCoefficient !== null && (
+              <div>
+                <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '1px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                  OVERLAP
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                  {coverage.overlapCoefficient}%
+                </div>
+              </div>
+            )}
             <div>
               <div style={{ fontSize: '9px', color: 'var(--text-secondary)', marginBottom: '1px', fontWeight: '600' }}>
                 ASSESSMENT

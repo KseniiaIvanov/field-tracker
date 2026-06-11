@@ -76,7 +76,7 @@ export function sitesInPolygon(sites, polygon) {
   return sites.filter(site => pointInPolygonCheck(site.latitude, site.longitude, polygon))
 }
 
-export function calculateCoverageAssessment(siteStats, areaStats) {
+export function calculateCoverageAssessment(siteStats, areaStats, siteBins = null, areaBins = null) {
   // Assess how well sites represent area distribution shape
   const siteMean = parseFloat(siteStats.mean)
   const siteStd = parseFloat(siteStats.std)
@@ -130,6 +130,16 @@ export function calculateCoverageAssessment(siteStats, areaStats) {
     assessment = 'Partial'
   }
 
+  // Overlap coefficient (histogram intersection): the area shared by the two
+  // density curves. 0 = no overlap, 100 = identical distributions. Bins must be
+  // aligned (same bin boundaries/count) for this to be meaningful.
+  let overlapCoefficient = null
+  if (siteBins && areaBins && siteBins.length > 0 && siteBins.length === areaBins.length) {
+    const binWidth = siteBins[0].max - siteBins[0].min
+    const overlap = siteBins.reduce((sum, bin, i) => sum + Math.min(bin.density, areaBins[i].density), 0) * binWidth
+    overlapCoefficient = (Math.min(1, overlap) * 100).toFixed(1)
+  }
+
   return {
     assessment,
     coverage: Math.min(coverage, 100),
@@ -141,7 +151,8 @@ export function calculateCoverageAssessment(siteStats, areaStats) {
     meanDiff: meanDiff.toFixed(3),
     stdDiff: (Math.abs(siteStd - areaStd)).toFixed(3),
     siteRange: siteRange.toFixed(3),
-    areaRange: areaRange.toFixed(3)
+    areaRange: areaRange.toFixed(3),
+    overlapCoefficient
   }
 }
 

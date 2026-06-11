@@ -118,6 +118,7 @@ function formatEntryAsText(entry) {
   lines.push(`Date:        ${entry.date || '-'}`)
   lines.push(`Time:        ${entry.localTime || '-'} (UTC ${entry.utcOffset || ''})`)
   lines.push(`Collector:   ${entry.collector || '-'}`)
+  if (entry.entryDurationSeconds !== undefined) lines.push(`Entry time:  ${entry.entryDurationSeconds}s`)
   lines.push('')
 
   // Location

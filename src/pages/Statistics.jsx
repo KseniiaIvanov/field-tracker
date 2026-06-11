@@ -42,6 +42,15 @@ export default function Statistics({ setCurrentPage, allEntries }) {
     return [...new Set(allEntries.map(e => e.date))].sort().reverse()
   }, [allEntries])
 
+  const avgEntryDuration = useMemo(() => {
+    const durations = filteredEntries
+      .map(e => e.entryDurationSeconds)
+      .filter(d => typeof d === 'number' && d > 0)
+    if (durations.length === 0) return null
+    const avg = durations.reduce((sum, d) => sum + d, 0) / durations.length
+    return { avg: Math.round(avg), count: durations.length }
+  }, [filteredEntries])
+
 
   return (
     <div className="page-content">
@@ -174,6 +183,11 @@ export default function Statistics({ setCurrentPage, allEntries }) {
         <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
           {filterByDay ? `Data for ${selectedDate}` : 'All data'}
         </p>
+        {avgEntryDuration && (
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
+            ⏱️ Avg. time per entry: <strong>{Math.floor(avgEntryDuration.avg / 60)}m {avgEntryDuration.avg % 60}s</strong> (n={avgEntryDuration.count})
+          </p>
+        )}
 
         {filteredEntries.length === 0 ? (
           <p style={{ color: 'var(--text-secondary)' }}>No measurements recorded yet.</p>

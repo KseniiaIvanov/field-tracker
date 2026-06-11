@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import localforage from 'localforage'
 import { useNotificationContext } from './context/NotificationContext'
@@ -58,6 +58,7 @@ function App() {
   const [deviceStoragePath, setDeviceStoragePath] = useState(null)
   const [, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
+  const entryStartTimeRef = useRef(Date.now())
 
   const WIZARD_STEPS = [
     { num: 1, name: 'Site Information', component: 'PointInfo' },
@@ -201,6 +202,13 @@ function App() {
       setStorageReady(true)
     }
   }, [showError])
+
+  // Mark the start of a new entry whenever the diary form is opened
+  useEffect(() => {
+    if (currentPage === 'diary') {
+      entryStartTimeRef.current = Date.now()
+    }
+  }, [currentPage])
 
   // Monitor GPS averaging in background and auto-finalize after 120 seconds
   useEffect(() => {
@@ -346,7 +354,11 @@ function App() {
       // Show warnings if any
       validation.warnings.forEach(warning => console.warn(`⚠️ ${warning}`))
 
-      const newEntries = [...allEntries, formData]
+      // Time spent on this entry, from opening the form (or saving the previous one) to now
+      const entryDurationSeconds = Math.round((Date.now() - entryStartTimeRef.current) / 1000)
+      const entryToSave = { ...formData, entryDurationSeconds }
+
+      const newEntries = [...allEntries, entryToSave]
       await localforage.setItem('allEntries', newEntries)
       setAllEntries(newEntries)
 
@@ -354,7 +366,7 @@ function App() {
       try {
         const rootDir = getRootDirectory()
         if (rootDir) {
-          await saveSiteToDevice(formData, rootDir)
+          await saveSiteToDevice(entryToSave, rootDir)
           console.log(`✅ Site saved to device storage`)
         }
       } catch (deviceError) {
@@ -362,11 +374,14 @@ function App() {
       }
 
       // Auto-download entry as individual file (backup)
-      downloadEntryWithPhotos(formData)
+      downloadEntryWithPhotos(entryToSave)
 
       // Keep carbonFluxMeasurement state persistent for next entry
       const persistedCarbonFlux = formData.carbonFluxMeasurement
       setCarbonFluxMeasurementDefault(persistedCarbonFlux)
+
+      // Start the clock for the next entry
+      entryStartTimeRef.current = Date.now()
 
       // Reset for next entry
       const nextNumber = (formData.siteNumber || 1) + 1
