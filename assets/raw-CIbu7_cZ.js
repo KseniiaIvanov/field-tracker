@@ -1,0 +1,1 @@
+import{t as e}from"./index-Dl6_jw0o.js";var t=class extends e{decodeBlock(e){return e}};export{t as default};
