@@ -473,7 +473,7 @@ function App() {
                         <button
                           onClick={() => setQuickMode(true)}
                           style={{ padding: '11px 18px', fontSize: '15px', minHeight: '42px', whiteSpace: 'nowrap', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}
-                        >⚡ Quick</button>
+                        >Quick</button>
                       )}
                       {allEntries.length > 0 && (
                         <button className="btn-copy-previous" onClick={copyFromPrevious} style={{ padding: '6px 12px', fontSize: '12px', minHeight: '32px', whiteSpace: 'nowrap', fontWeight: '600', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer' }}>
