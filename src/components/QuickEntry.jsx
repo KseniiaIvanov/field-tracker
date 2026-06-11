@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 
 const LANDSCAPE_DEFAULTS = ['RTS', 'Polygon', 'Trench', 'Shore', 'Pond', 'Hummock', 'Palsa', 'Thermokarst', 'Degraded', 'Wet Sedge', 'Dry Moss', 'Mixed']
 const DISTURBANCE_OPTIONS = ['None', 'Thermokarst', 'Solifluction', 'Erosion', 'Trampling', 'Other']
+const HYDROTILE_OPTIONS = ['Up-up', 'Up-low', 'Low-up', 'Low-low']
 
 export default function QuickEntry({ watch, setValue, onSave, onBack }) {
   const [landscapeSuggestions, setLandscapeSuggestions] = useState([])
@@ -67,10 +68,17 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
     }
 
     const handleError = (error) => {
-      navigator.geolocation.clearWatch(watchId)
-      setIsCollectingGPS(false)
-      setGpsStatus('')
-      alert(`❌ GPS error: ${error.message}`)
+      // Only permission denial (code 1) is fatal. "Location unknown" / timeout
+      // (kCLErrorDomain error 0, codes 2/3) are transient — keep watching so the
+      // device can acquire a fix instead of failing on the first hiccup.
+      if (error.code === 1) {
+        navigator.geolocation.clearWatch(watchId)
+        setIsCollectingGPS(false)
+        setGpsStatus('')
+        alert('❌ Location permission denied. Enable location access for this site in your browser/phone settings.')
+        return
+      }
+      setGpsStatus(`⏳ Acquiring GPS signal… (${readings.length} reading${readings.length === 1 ? '' : 's'} so far)`)
     }
 
     watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
@@ -102,10 +110,23 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
   }
 
   const updateVegetation = (category, value) => {
-    const updated = { ...shortVegData }
-    if (!updated[category]) updated[category] = {}
-    updated[category].coverage = parseInt(value)
-    setValue('vegetationShort', updated)
+    // Immutable update: create a fresh nested object so react-hook-form detects the
+    // change and re-renders immediately (fixes the value appearing one step late).
+    const updated = {
+      ...shortVegData,
+      [category]: { ...(shortVegData[category] || {}), coverage: parseInt(value) }
+    }
+    setValue('vegetationShort', updated, { shouldDirty: true })
+  }
+
+  const handlePhoto = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => setValue('entryPhotos', [...(data.entryPhotos || []), { id: Date.now(), originalData: reader.result, previewData: reader.result, name: file.name, type: file.type }])
+      reader.readAsDataURL(file)
+    }
+    e.target.value = ''
   }
 
   const handleSave = () => {
@@ -119,6 +140,10 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
     }
     if (!data.landscape) {
       alert('⚠️ Landscape type required')
+      return
+    }
+    if (!data.entryPhotos || data.entryPhotos.length === 0) {
+      alert('⚠️ Site photo required — add one with the 📸 button above')
       return
     }
     onSave()
@@ -281,42 +306,40 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
           </div>
         </div>
 
-        {/* STANDING WATER */}
-        <div className="field-group">
-          <label>Standing Water</label>
-          <select
-            value={data.standingWater ? 'yes' : 'no'}
-            onChange={(e) => setValue('standingWater', e.target.value === 'yes')}
-          >
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </select>
+        {/* STANDING WATER + HYDROTILES */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="field-group">
+            <label>Standing Water</label>
+            <select
+              value={data.standingWater ? 'yes' : 'no'}
+              onChange={(e) => setValue('standingWater', e.target.value === 'yes')}
+            >
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div className="field-group">
+            <label>Hydrotiles</label>
+            <select value={data.hydrotiles || ''} onChange={(e) => setValue('hydrotiles', e.target.value)}>
+              <option value="">Select...</option>
+              {HYDROTILE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
         </div>
 
-        {/* DISTURBANCE - Quick buttons */}
+        {/* DISTURBANCE - pick an option from the list or type a custom value */}
         <div className="field-group">
           <label>Disturbance</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', marginBottom: '8px' }}>
-            {DISTURBANCE_OPTIONS.map((option) => (
-              <button
-                key={option}
-                onClick={() => setValue('disturbance', option)}
-                style={{
-                  padding: '8px 12px',
-                  backgroundColor: data.disturbance === option ? 'var(--primary-color)' : 'var(--bg-secondary)',
-                  color: data.disturbance === option ? 'white' : 'var(--text-primary)',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
+          <input
+            type="text"
+            list="quickDisturbanceOptions"
+            value={data.disturbance || ''}
+            onChange={(e) => setValue('disturbance', e.target.value)}
+            placeholder="Choose or type…"
+          />
+          <datalist id="quickDisturbanceOptions">
+            {DISTURBANCE_OPTIONS.map((o) => <option key={o} value={o} />)}
+          </datalist>
         </div>
 
         {/* VEGETATION - Coverage only */}
@@ -345,6 +368,27 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
               </select>
             </div>
           ))}
+        </div>
+
+        {/* SITE PHOTO (required) */}
+        <div className="field-group">
+          <label>📷 Site Photo (required)</label>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'inline-block', padding: '10px 14px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+              📸 Camera
+              <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} style={{ display: 'none' }} />
+            </label>
+            <label style={{ display: 'inline-block', padding: '10px 14px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
+              📁 Gallery
+              <input type="file" accept="image/*" onChange={handlePhoto} style={{ display: 'none' }} />
+            </label>
+            {(data.entryPhotos || []).map((photo) => (
+              <div key={photo.id} style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', width: '52px', height: '52px' }}>
+                <img src={photo.previewData || photo.originalData} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button onClick={() => setValue('entryPhotos', (data.entryPhotos || []).filter((p) => p.id !== photo.id))} style={{ position: 'absolute', top: '1px', right: '1px', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', fontSize: '11px', padding: 0, lineHeight: '18px' }}>✕</button>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* SAVE BUTTON */}

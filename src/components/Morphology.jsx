@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+const DISTURBANCE_OPTIONS = ['None', 'Thermokarst', 'Solifluction', 'Erosion', 'Trampling', 'Other']
+
 export default function Morphology({ watch, setValue }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const data = watch()
@@ -44,12 +46,16 @@ export default function Morphology({ watch, setValue }) {
             <label>Disturbances</label>
             <input
               type="text"
+              list="morphDisturbanceOptions"
               value={data.disturbance || ''}
               onChange={(e) => setValue('disturbance', e.target.value)}
               maxLength="60"
-              placeholder="Thermokarst, erosion, trampling..."
+              placeholder="Choose or type…"
               style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
             />
+            <datalist id="morphDisturbanceOptions">
+              {DISTURBANCE_OPTIONS.map((o) => <option key={o} value={o} />)}
+            </datalist>
           </div>
 
           <div className="field-group">

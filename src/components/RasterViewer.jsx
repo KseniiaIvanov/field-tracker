@@ -596,11 +596,14 @@ function RasterViewerComponent({
           ctx.lineWidth = 2
           ctx.stroke()
 
-          // Draw small number in center
-          ctx.fillStyle = 'white'
+          // Draw small number in center (dark outline keeps it readable on any colormap colour)
           ctx.font = 'bold 10px Arial'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
+          ctx.lineWidth = 3
+          ctx.strokeStyle = 'rgba(0,0,0,0.75)'
+          ctx.strokeText((idx + 1).toString(), pixelPos.x, pixelPos.y)
+          ctx.fillStyle = 'white'
           ctx.fillText((idx + 1).toString(), pixelPos.x, pixelPos.y)
         } catch (err) {
           // Skip sites that can't be converted
@@ -687,11 +690,14 @@ function RasterViewerComponent({
           ctx.lineWidth = 2
           ctx.stroke()
 
-          // Draw number
-          ctx.fillStyle = 'white'
+          // Draw number (dark outline keeps it readable on any colormap colour)
           ctx.font = 'bold 11px Arial'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
+          ctx.lineWidth = 3
+          ctx.strokeStyle = 'rgba(0,0,0,0.75)'
+          ctx.strokeText((idx + 1).toString(), pixelPos.x, pixelPos.y)
+          ctx.fillStyle = 'white'
           ctx.fillText((idx + 1).toString(), pixelPos.x, pixelPos.y)
         } catch (err) {
           console.debug(`Polygon point ${idx} error:`, err.message)
