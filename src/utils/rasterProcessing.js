@@ -696,7 +696,7 @@ export function getPixelValue(rasterData, pixelX, pixelY) {
   return value
 }
 
-export function extractValueAtBuffer(rasterData, lat, lon, accuracyMeters) {
+export function extractValueAtBuffer(rasterData, lat, lon, accuracyMeters, categorical = false) {
   try {
     const centerPixel = coordinateToPixel(rasterData, lat, lon)
     const radiusInPixels = metersToPixels(rasterData, accuracyMeters)
@@ -737,6 +737,19 @@ export function extractValueAtBuffer(rasterData, lat, lon, accuracyMeters) {
         logger.warn("rasterProcessing", `     [BUFFER ${window._debugLogged}] No pixel values found in ${radiusInPixels}px radius around [${centerPixel.x}, ${centerPixel.y}]`)
       }
       return null
+    }
+
+    // Categorical rasters (e.g. land-cover class codes): averaging is meaningless,
+    // so return the mode (most frequent class) within the buffer instead of the median.
+    if (categorical) {
+      const counts = new Map()
+      for (const v of values) counts.set(v, (counts.get(v) || 0) + 1)
+      let mode = values[0]
+      let best = 0
+      for (const [v, c] of counts) {
+        if (c > best) { best = c; mode = v }
+      }
+      return mode
     }
 
     values.sort((a, b) => a - b)
@@ -994,6 +1007,38 @@ export function calculateHistogram(values, binCount = 20, forcedMin = null, forc
       median: percentiles.p50,
       p25: percentiles.p25,
       p75: percentiles.p75
+    }
+  }
+}
+
+// Class-frequency distribution for categorical rasters (e.g. land-cover maps).
+// Rounds values to integer class codes and counts how often each occurs.
+export function calculateClassDistribution(values) {
+  if (!values || values.length === 0) {
+    return { classes: [], stats: { count: 0, classCount: 0 } }
+  }
+
+  const counts = new Map()
+  values.forEach(v => {
+    const code = Math.round(v)
+    counts.set(code, (counts.get(code) || 0) + 1)
+  })
+
+  const total = values.length
+  const classes = Array.from(counts.entries())
+    .map(([code, count]) => ({
+      code,
+      count,
+      percentage: ((count / total) * 100).toFixed(1),
+      proportion: count / total
+    }))
+    .sort((a, b) => a.code - b.code)
+
+  return {
+    classes,
+    stats: {
+      count: total,
+      classCount: classes.length
     }
   }
 }

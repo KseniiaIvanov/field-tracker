@@ -5,7 +5,8 @@ const CATEGORIES = {
   moisture: { label: 'Moisture', color: '#2196F3' },
   vegetation: { label: 'Vegetation', color: '#4CAF50' },
   disturbance: { label: 'Disturbance', color: '#FF9800' },
-  other: { label: 'Other', color: '#9C27B0' }
+  other: { label: 'Other', color: '#9C27B0' },
+  landcover: { label: 'Land Cover', color: '#795548' }
 }
 
 // Default colormap per category (user can still change in the viewer)
@@ -13,7 +14,8 @@ const CATEGORY_COLORMAPS = {
   moisture: 'blues',
   vegetation: 'greens',
   disturbance: 'reds',
-  other: 'plasma'
+  other: 'plasma',
+  landcover: 'viridis'
 }
 
 export default function RasterStack({

@@ -156,6 +156,56 @@ export function calculateCoverageAssessment(siteStats, areaStats, siteBins = nul
   }
 }
 
+// Coverage assessment for CATEGORICAL rasters (land-cover maps).
+// Compares how well the class proportions sampled at sites match the class
+// proportions across the whole study area. Returns an overlap coefficient
+// (Σ min(siteProp, areaProp)) and how many of the area's classes were sampled.
+export function calculateCategoricalCoverage(siteDist, areaDist) {
+  const siteClasses = siteDist?.classes || []
+  const areaClasses = areaDist?.classes || []
+
+  if (areaClasses.length === 0) {
+    return { assessment: 'Poor', coverage: 0, overlapCoefficient: '0.0', classesSampled: 0, classesTotal: 0, classRepresentation: '0.0' }
+  }
+
+  const siteProp = new Map(siteClasses.map(c => [c.code, c.proportion]))
+  const areaProp = new Map(areaClasses.map(c => [c.code, c.proportion]))
+
+  // Histogram intersection over the union of class codes (0..1)
+  const allCodes = new Set([...siteProp.keys(), ...areaProp.keys()])
+  let overlap = 0
+  allCodes.forEach(code => {
+    overlap += Math.min(siteProp.get(code) || 0, areaProp.get(code) || 0)
+  })
+
+  // Fraction of the area's classes that appear at least once at the sites
+  const classesSampled = areaClasses.filter(c => siteProp.has(c.code)).length
+  const classesTotal = areaClasses.length
+  const classRepresentation = classesSampled / classesTotal
+
+  // Combined coverage: how similar the proportions are AND how many classes are hit
+  const coverage = Math.round(overlap * classRepresentation * 100)
+
+  let assessment = 'Poor'
+  if (overlap >= 0.85 && classRepresentation >= 0.9) {
+    assessment = 'Excellent'
+  } else if (overlap >= 0.7 && classRepresentation >= 0.7) {
+    assessment = 'Good'
+  } else if (overlap >= 0.5 || classRepresentation >= 0.5) {
+    assessment = 'Partial'
+  }
+
+  return {
+    categorical: true,
+    assessment,
+    coverage: Math.min(coverage, 100),
+    overlapCoefficient: (overlap * 100).toFixed(1),
+    classesSampled,
+    classesTotal,
+    classRepresentation: (classRepresentation * 100).toFixed(1)
+  }
+}
+
 export function validatePolygon(polygon) {
   if (!polygon || !polygon.geometry || !polygon.geometry.coordinates) {
     return { valid: false, error: 'Invalid polygon structure' }

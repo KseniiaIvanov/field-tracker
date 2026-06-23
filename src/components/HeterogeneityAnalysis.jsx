@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import localforage from 'localforage'
 import logger from '../utils/logger'
 import RasterHistogram from './RasterHistogram'
+import RasterCategoricalChart from './RasterCategoricalChart'
 import RasterStack from './RasterStack'
 import RasterMetadataDisplay from './RasterMetadataDisplay'
 import MeasurementPlanner from './MeasurementPlanner'
@@ -13,11 +14,13 @@ import {
   extractValueAtBuffer,
   extractValuesInPolygon,
   calculateHistogram,
+  calculateClassDistribution,
   getPolygonBounds,
   pointInPolygon
 } from '../utils/rasterProcessing'
 import {
   calculateCoverageAssessment,
+  calculateCategoricalCoverage,
   validatePolygon
 } from '../utils/spatialOperations'
 import { parseShapefileZip } from '../utils/shapefileHandler'
@@ -28,7 +31,8 @@ const CATEGORIES = {
   moisture: { label: 'Moisture', color: '#2196F3', order: 0 },
   vegetation: { label: 'Vegetation', color: '#4CAF50', order: 1 },
   disturbance: { label: 'Disturbance', color: '#FF9800', order: 2 },
-  other: { label: 'Other', color: '#9C27B0', order: 3, customizable: true }
+  other: { label: 'Other', color: '#9C27B0', order: 3, customizable: true },
+  landcover: { label: 'Land Cover', color: '#795548', order: 4, categorical: true }
 }
 
 export default function HeterogeneityAnalysis({ allEntries }) {
@@ -41,14 +45,16 @@ export default function HeterogeneityAnalysis({ allEntries }) {
     moisture: { enabled: true, customName: null },
     vegetation: { enabled: true, customName: null },
     disturbance: { enabled: true, customName: null },
-    other: { enabled: false, customName: 'Other' }
+    other: { enabled: false, customName: 'Other' },
+    landcover: { enabled: true, customName: null }
   })
   // Independent state for histogram/analysis layer selection
   const [analysisLayerSelection, setAnalysisLayerSelection] = useState({
     moisture: true,
     vegetation: true,
     disturbance: true,
-    other: true
+    other: true,
+    landcover: true
   })
   const [rgbRaster, setRgbRaster] = useState(null) // RGB base layer
   const [rgbDataCache, setRgbDataCache] = useState(null)
@@ -786,8 +792,9 @@ export default function HeterogeneityAnalysis({ allEntries }) {
       logger.debug('HeterogeneityAnalysis.jsx', `Raster cache keys: ${Object.keys(rasterDataCache).join(', ')}`)
 
       for (const category of categories) {
+        const isCategorical = CATEGORIES[category]?.categorical === true
         logger.debug('HeterogeneityAnalysis.jsx', `\n${'='.repeat(50)}`)
-        logger.debug('HeterogeneityAnalysis.jsx', `🔵 ANALYZING ${category.toUpperCase()}`)
+        logger.debug('HeterogeneityAnalysis.jsx', `🔵 ANALYZING ${category.toUpperCase()}${isCategorical ? ' (categorical)' : ''}`)
         logger.debug('HeterogeneityAnalysis.jsx', `${'='.repeat(50)}`)
         if (!rastersByCategory[category]) {
           logger.error('HeterogeneityAnalysis.jsx', `❌ No raster metadata for ${category}`)
@@ -921,7 +928,7 @@ export default function HeterogeneityAnalysis({ allEntries }) {
 
         const siteValues = []
         for (const site of sitesInArea) {
-          const value = extractValueAtBuffer(rasterData, site.latitude, site.longitude, site.accuracy || 5)
+          const value = extractValueAtBuffer(rasterData, site.latitude, site.longitude, site.accuracy || 5, isCategorical)
           if (value !== null) {
             siteValues.push({ value, siteNumber: site.siteNumber })
           }
@@ -957,24 +964,43 @@ export default function HeterogeneityAnalysis({ allEntries }) {
           continue
         }
 
-        // Calculate area histogram first to establish the shared value range
-        // Then force site histogram to use the same bin boundaries so that
-        // bin[i] covers identical value ranges in both — required for correct
-        // undersampling detection in findUnsampledRanges (which compares by index)
-        const areaHistogram = calculateHistogram(validAreaValues, 20)
-        const areaRangeMin = parseFloat(areaHistogram.stats.min)
-        const areaRangeMax = parseFloat(areaHistogram.stats.max)
-        const siteHistogram = calculateHistogram(validSiteValues, 20, areaRangeMin, areaRangeMax)
-        const coverage = calculateCoverageAssessment(siteHistogram.stats, areaHistogram.stats, siteHistogram.bins, areaHistogram.bins)
+        if (isCategorical) {
+          // Land-cover map: compare class-frequency distributions instead of
+          // continuous histograms (mean/std/bins would be meaningless on class codes).
+          const areaDist = calculateClassDistribution(validAreaValues)
+          const siteDist = calculateClassDistribution(validSiteValues)
+          const coverage = calculateCategoricalCoverage(siteDist, areaDist)
 
-        newResults[category] = {
-          sitesAnalyzed: sitesInArea.length,
-          siteValues,
-          areaPixelsCount: areaValues.length,
-          siteHistogram,
-          areaHistogram,
-          coverage,
-          analyzedAt: new Date().toISOString()
+          newResults[category] = {
+            categorical: true,
+            sitesAnalyzed: sitesInArea.length,
+            siteValues,
+            areaPixelsCount: areaValues.length,
+            siteDist,
+            areaDist,
+            coverage,
+            analyzedAt: new Date().toISOString()
+          }
+        } else {
+          // Calculate area histogram first to establish the shared value range
+          // Then force site histogram to use the same bin boundaries so that
+          // bin[i] covers identical value ranges in both — required for correct
+          // undersampling detection in findUnsampledRanges (which compares by index)
+          const areaHistogram = calculateHistogram(validAreaValues, 20)
+          const areaRangeMin = parseFloat(areaHistogram.stats.min)
+          const areaRangeMax = parseFloat(areaHistogram.stats.max)
+          const siteHistogram = calculateHistogram(validSiteValues, 20, areaRangeMin, areaRangeMax)
+          const coverage = calculateCoverageAssessment(siteHistogram.stats, areaHistogram.stats, siteHistogram.bins, areaHistogram.bins)
+
+          newResults[category] = {
+            sitesAnalyzed: sitesInArea.length,
+            siteValues,
+            areaPixelsCount: areaValues.length,
+            siteHistogram,
+            areaHistogram,
+            coverage,
+            analyzedAt: new Date().toISOString()
+          }
         }
         logger.debug('HeterogeneityAnalysis.jsx', `✓ Completed analysis for ${category}:`, newResults[category].coverage)
       }
@@ -1541,7 +1567,13 @@ export default function HeterogeneityAnalysis({ allEntries }) {
                       }}>
                         {categoryName}
                       </h5>
-                      {result.siteHistogram && result.areaHistogram ? (
+                      {result.categorical && result.siteDist && result.areaDist ? (
+                        <RasterCategoricalChart
+                          siteDist={result.siteDist}
+                          areaDist={result.areaDist}
+                          coverage={result.coverage}
+                        />
+                      ) : result.siteHistogram && result.areaHistogram ? (
                         <RasterHistogram
                           siteStats={result.siteHistogram}
                           areaStats={result.areaHistogram}
