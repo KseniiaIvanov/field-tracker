@@ -59,6 +59,9 @@ function App() {
   const [, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
   const entryStartTimeRef = useRef(Date.now())
+  // PWA install prompt (Android/Chrome no longer shows an automatic banner —
+  // we capture the event and surface our own "Install" button instead)
+  const [installPrompt, setInstallPrompt] = useState(null)
 
   const WIZARD_STEPS = [
     { num: 1, name: 'Site Information', component: 'PointInfo' },
@@ -202,6 +205,34 @@ function App() {
       setStorageReady(true)
     }
   }, [showError])
+
+  // Capture the browser's install prompt so we can offer our own Install button.
+  // Modern Chrome/Android suppresses the automatic mini-infobar, so without this
+  // the app would never appear installable to the user.
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault() // stop Chrome from auto-handling; we drive it from our button
+      setInstallPrompt(e)
+    }
+    const handleInstalled = () => setInstallPrompt(null)
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
+    window.addEventListener('appinstalled', handleInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
+      window.removeEventListener('appinstalled', handleInstalled)
+    }
+  }, [])
+
+  const triggerInstall = async () => {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    try {
+      await installPrompt.userChoice
+    } catch {
+      // user dismissed — keep the prompt so they can try again later
+    }
+    setInstallPrompt(null)
+  }
 
   // Mark the start of a new entry whenever the diary form is opened
   useEffect(() => {
@@ -437,6 +468,40 @@ function App() {
 
   return (
     <div className="app light">
+      {installPrompt && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '10px',
+          padding: 'calc(env(safe-area-inset-top, 0px) + 8px) 12px 8px',
+          backgroundColor: '#1976d2',
+          color: 'white',
+          fontSize: '13px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+        }}>
+          <span>📲 Install Field Tracker for offline use</span>
+          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+            <button
+              onClick={triggerInstall}
+              style={{ padding: '6px 14px', backgroundColor: 'white', color: '#1976d2', border: 'none', borderRadius: '6px', fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}
+            >
+              Install
+            </button>
+            <button
+              onClick={() => setInstallPrompt(null)}
+              style={{ padding: '6px 10px', backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.5)', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       <main className="form-container" style={{ paddingBottom: currentPage === 'diary' ? '120px' : '0' }}>
         <ErrorBoundary>
           {currentPage === 'home' && (
