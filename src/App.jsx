@@ -57,7 +57,6 @@ function App() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [deviceStoragePath, setDeviceStoragePath] = useState(null)
   const [, setStorageReady] = useState(false)
-  const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
   const entryStartTimeRef = useRef(Date.now())
   // PWA install prompt (Android/Chrome no longer shows an automatic banner —
   // we capture the event and surface our own "Install" button instead)
@@ -242,39 +241,6 @@ function App() {
     }
   }, [currentPage])
 
-  // Monitor GPS averaging in background and auto-finalize after 120 seconds
-  useEffect(() => {
-    if (!gpsAveraging) return
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - gpsAveraging.startTime
-      const progress = Math.min(100, Math.round((elapsed / 60000) * 100))
-
-      setGpsAveraging(prev => ({
-        ...prev,
-        progress,
-        status: `📍 GPS averaging... ${progress}% (${Math.round(elapsed / 1000)}s)`
-      }))
-
-      // Auto-finalize after 60 seconds
-      if (elapsed >= 60000 && gpsAveraging.readings.length > 0) {
-        const readings = gpsAveraging.readings
-        const avgLat = readings.reduce((sum, r) => sum + r.lat, 0) / readings.length
-        const avgLon = readings.reduce((sum, r) => sum + r.lon, 0) / readings.length
-        const minAccuracy = Math.round(Math.min(...readings.map(r => r.accuracy)))
-
-        setValue('latitude', avgLat.toFixed(6))
-        setValue('longitude', avgLon.toFixed(6))
-        setValue('accuracy', minAccuracy)
-
-        setGpsAveraging(null)
-        showSuccess(`✅ GPS locked! ${readings.length} readings | Accuracy: ${minAccuracy}m`)
-        clearInterval(interval)
-      }
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [gpsAveraging, setValue, showSuccess])
 
   // Bluetooth sensor reading handler
   // Autosave draft 10s after last change (photos excluded to stay within localStorage 5MB limit)
@@ -606,7 +572,7 @@ function App() {
 
               {/* WIZARD STEPS */}
               <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-                {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} gpsAveraging={gpsAveraging} setGpsAveraging={setGpsAveraging} />}
+                {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} />}
                 {currentStep === 2 && (
                   <>
                     {/* MOST-USED quick panel: the few fields filled at every point */}
