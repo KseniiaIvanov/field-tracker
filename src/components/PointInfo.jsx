@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { validateCoordinates, validateSiteNumber } from '../utils/validation'
 import piexif from 'piexifjs'
 
 const LANDSCAPE_DEFAULTS = ['RTS', 'Polygon', 'Trench', 'Shore', 'Pond', 'Hummock', 'Palsa', 'Thermokarst', 'Degraded', 'Wet Sedge', 'Dry Moss', 'Mixed']
@@ -9,7 +8,6 @@ export default function PointInfo({ watch, setValue, previousEntry, gpsAveraging
   const [isExpanded, setIsExpanded] = useState(true)
   const [landscapeSuggestions, setLandscapeSuggestions] = useState([])
   const [allLandscapes] = useState(LANDSCAPE_DEFAULTS)
-  const [errors, setErrors] = useState({})
   const [uploadedPhoto, setUploadedPhoto] = useState(null)
   const [photoMessage, setPhotoMessage] = useState('')
   const [isRecording, setIsRecording] = useState(false)
@@ -31,13 +29,6 @@ export default function PointInfo({ watch, setValue, previousEntry, gpsAveraging
       setValue('shadowExperimentNetting', previousEntry.shadowExperimentNetting)
       alert('✓ Site info copied from previous entry')
     }
-  }
-
-  const setFieldError = (field, error) => {
-    setErrors(prev => ({
-      ...prev,
-      [field]: error
-    }))
   }
 
   const startRecording = async () => {
@@ -212,14 +203,6 @@ export default function PointInfo({ watch, setValue, previousEntry, gpsAveraging
     setGpsAveraging(null)
   }
 
-  const incrementSite = () => {
-    setValue('siteNumber', (data.siteNumber || 1) + 1)
-  }
-
-  const decrementSite = () => {
-    setValue('siteNumber', Math.max(1, (data.siteNumber || 1) - 1))
-  }
-
   // Extract GPS coordinates from photo EXIF
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -323,27 +306,20 @@ export default function PointInfo({ watch, setValue, previousEntry, gpsAveraging
       {isExpanded && (
         <div className="section-content">
 
-          {/* ROW 1: Site # + Date + Time (3 columns, compact) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '6px', alignItems: 'end' }}>
+          {/* ROW 1: Area + Collar */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <div className="field-group">
-              <label style={{ fontSize: '11px' }}>Site #</label>
-              <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                <button onClick={decrementSite} style={{ padding: '2px 4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '3px', cursor: 'pointer', minWidth: '24px' }}>−</button>
-                <input
-                  type="number"
-                  value={data.siteNumber || 1}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    const validation = validateSiteNumber(value)
-                    setFieldError('siteNumber', validation.valid ? null : validation.message)
-                    setValue('siteNumber', parseInt(value) || 1)
-                  }}
-                  min="1" max="999"
-                  style={{ width: '40px', textAlign: 'center', fontWeight: '700', padding: '4px', fontSize: '12px', color: '#1a1a1a', backgroundColor: '#fff', border: errors.siteNumber ? '1px solid #d32f2f' : '1px solid #ddd', borderRadius: '4px' }}
-                />
-                <button onClick={incrementSite} style={{ padding: '2px 4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '3px', cursor: 'pointer', minWidth: '24px' }}>+</button>
-              </div>
+              <label>Area</label>
+              <input type="text" value={data.area || ''} onChange={(e) => setValue('area', e.target.value)} placeholder="Area name / ID" />
             </div>
+            <div className="field-group">
+              <label>Collar</label>
+              <input type="text" value={data.collar || ''} onChange={(e) => setValue('collar', e.target.value)} placeholder="Collar ID" />
+            </div>
+          </div>
+
+          {/* ROW 2: Date + Time */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <div className="field-group">
               <label style={{ fontSize: '11px' }}>Date</label>
               <input type="date" value={data.date} onChange={(e) => setValue('date', e.target.value)} style={{ fontSize: '12px', padding: '4px' }} />
@@ -361,19 +337,7 @@ export default function PointInfo({ watch, setValue, previousEntry, gpsAveraging
             </div>
           )}
 
-          {/* ROW 4: Lat + Lon */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <div className="field-group">
-              <label>Latitude</label>
-              <input type="number" step="0.000001" value={data.latitude || ''} placeholder="68.356..." onChange={(e) => { setValue('latitude', e.target.value); setFieldError('coords', validateCoordinates(e.target.value, data.longitude).valid ? null : validateCoordinates(e.target.value, data.longitude).message) }} style={{ borderColor: errors.coords ? '#d32f2f' : undefined }} />
-            </div>
-            <div className="field-group">
-              <label>Longitude</label>
-              <input type="number" step="0.000001" value={data.longitude || ''} placeholder="19.234..." onChange={(e) => { setValue('longitude', e.target.value); setFieldError('coords', validateCoordinates(data.latitude, e.target.value).valid ? null : validateCoordinates(data.latitude, e.target.value).message) }} style={{ borderColor: errors.coords ? '#d32f2f' : undefined }} />
-            </div>
-          </div>
-          {errors.coords && <small style={{ color: '#d32f2f', fontSize: '11px' }}>⚠️ {errors.coords}</small>}
-          {data.accuracy && <small style={{ color: '#666', fontSize: '11px' }}>GPS accuracy: {data.accuracy}m</small>}
+          {data.accuracy && <small style={{ color: '#666', fontSize: '11px' }}>📍 GPS tagged (±{data.accuracy}m)</small>}
 
           {/* ROW 5: Landscape + Organic matter */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>

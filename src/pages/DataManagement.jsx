@@ -18,6 +18,8 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
     const flatData = allEntries.map(entry => {
       const row = {
         'Site Number': entry.siteNumber,
+        'Area': entry.area,
+        'Collar': entry.collar,
         'Date': entry.date,
         'Local Time': entry.localTime,
         'UTC Offset': entry.utcOffset,
@@ -31,6 +33,7 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
         'Environment': entry.terrestrialAquatic,
         'Cloud Cover (%)': entry.weather?.cloudCover,
         'Precipitation': entry.weather?.precipitation,
+        'Wind': entry.weather?.wind,
         'Wind Speed (m/s)': entry.weather?.windSpeed,
         'Wind Direction': entry.weather?.windDirection,
         'Air Temperature (C)': entry.weather?.temperature,

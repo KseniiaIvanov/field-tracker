@@ -115,6 +115,8 @@ function formatEntryAsText(entry) {
   lines.push(sep)
 
   // Basic info
+  lines.push(`Area:        ${entry.area || '-'}`)
+  lines.push(`Collar:      ${entry.collar || '-'}`)
   lines.push(`Date:        ${entry.date || '-'}`)
   lines.push(`Time:        ${entry.localTime || '-'} (UTC ${entry.utcOffset || ''})`)
   lines.push(`Collector:   ${entry.collector || '-'}`)
@@ -144,6 +146,7 @@ function formatEntryAsText(entry) {
     lines.push(`  Air humidity: ${w.humidity !== undefined ? w.humidity + '%' : '-'}`)
     lines.push(`  Cloud:     ${w.cloudCover !== undefined ? w.cloudCover + '%' : '-'}`)
     lines.push(`  Precipitation: ${w.precipitation || '-'}`)
+    lines.push(`  Wind:      ${w.wind || '-'}`)
     lines.push(`  Wind speed: ${w.windSpeed !== undefined ? w.windSpeed + ' m/s' : '-'}`)
     lines.push(`  Wind direction: ${w.windDirection || '-'}`)
     lines.push('')

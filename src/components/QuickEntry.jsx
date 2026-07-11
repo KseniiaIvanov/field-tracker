@@ -142,10 +142,6 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
       alert('⚠️ Landscape type required')
       return
     }
-    if (!data.entryPhotos || data.entryPhotos.length === 0) {
-      alert('⚠️ Site photo required — add one with the 📸 button above')
-      return
-    }
     onSave()
   }
 
@@ -372,7 +368,7 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
 
         {/* SITE PHOTO (required) */}
         <div className="field-group">
-          <label>📷 Site Photo (required)</label>
+          <label>📷 Site Photo</label>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <label style={{ display: 'inline-block', padding: '10px 14px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' }}>
               📸 Camera

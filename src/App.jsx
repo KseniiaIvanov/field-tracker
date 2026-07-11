@@ -65,10 +65,9 @@ function App() {
 
   const WIZARD_STEPS = [
     { num: 1, name: 'Site Information', component: 'PointInfo' },
-    { num: 2, name: 'Weather', component: 'Weather' },
+    { num: 2, name: 'Weather, Soil & Morphology', component: 'Conditions' },
     { num: 3, name: 'Vegetation', component: 'VegetationShort' },
-    { num: 4, name: 'Soil & Morphology', component: 'SoilMorphology' },
-    { num: 5, name: 'Review & Save', component: 'ReviewSave' }
+    { num: 4, name: 'Review & Save', component: 'ReviewSave' }
   ]
 
   const nextStep = () => {
@@ -89,6 +88,8 @@ function App() {
     defaultValues: {
       collector: '',
       siteNumber: 1,
+      area: '',
+      collar: '',
       date: new Date().toISOString().split('T')[0],
       localTime: '',
       utcOffset: getCurrentUTCOffset(),
@@ -306,6 +307,7 @@ function App() {
       reset({
         ...lastEntry,
         siteNumber: (lastEntry.siteNumber || 1) + 1,
+        collar: '',
         date: new Date().toISOString().split('T')[0],
         localTime: `${hours}:${minutes}`,
         latitude: '',
@@ -419,6 +421,7 @@ function App() {
       reset({
         ...formData,
         siteNumber: nextNumber,
+        collar: '', // area carries over via spread; collar clears for the next chamber
         date: new Date().toISOString().split('T')[0],
         localTime: '',
         latitude: '',
@@ -604,7 +607,115 @@ function App() {
               {/* WIZARD STEPS */}
               <div style={{ maxWidth: '600px', margin: '0 auto' }}>
                 {currentStep === 1 && <PointInfo control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} gpsAveraging={gpsAveraging} setGpsAveraging={setGpsAveraging} />}
-                {currentStep === 2 && <Weather control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} />}
+                {currentStep === 2 && (
+                  <>
+                    {/* MOST-USED quick panel: the few fields filled at every point */}
+                    <div className="section">
+                      <div className="section-header"><h2>Most used</h2></div>
+                      <div className="section-content" style={{ paddingTop: '12px' }}>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                          <div className="field-group">
+                            <label style={{ fontSize: '12px' }}>Cloud Cover: {formData.weather?.cloudCover ?? 0}%</label>
+                            <input type="range" min="0" max="100" value={formData.weather?.cloudCover ?? 0}
+                              onChange={(e) => setValue('weather', { ...(formData.weather || {}), cloudCover: parseInt(e.target.value) })} />
+                          </div>
+                          <div className="field-group">
+                            <label style={{ fontSize: '12px' }}>Precipitation</label>
+                            <select value={formData.weather?.precipitation || 'none'}
+                              onChange={(e) => setValue('weather', { ...(formData.weather || {}), precipitation: e.target.value })}>
+                              <option value="none">None</option>
+                              <option value="drizzle">Drizzle</option>
+                              <option value="light">Light</option>
+                              <option value="moderate">Moderate</option>
+                              <option value="heavy">Heavy</option>
+                              <option value="snow">Snow</option>
+                              <option value="sleet">Sleet</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="field-group" style={{ marginBottom: '12px' }}>
+                          <label style={{ fontSize: '12px' }}>Wind</label>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                            {['Calm', 'Light', 'Strong'].map((w) => {
+                              const active = formData.weather?.wind === w
+                              return (
+                                <button key={w} type="button"
+                                  onClick={() => setValue('weather', { ...(formData.weather || {}), wind: w })}
+                                  style={{ padding: '10px 6px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px', backgroundColor: active ? 'var(--primary-color)' : 'var(--bg-secondary)', color: active ? 'white' : 'var(--text-primary)' }}>
+                                  {w}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="field-group" style={{ marginBottom: '12px' }}>
+                          <label style={{ fontSize: '12px' }}>AL Depth cm (3 readings){formData.activeLayerDepth !== '' && formData.activeLayerDepth !== undefined ? ` — ∅ ${formData.activeLayerDepth} cm` : ''}</label>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {[1, 2, 3].map((i) => (
+                              <input key={i} type="number" min="0" step="1" placeholder={`#${i}`}
+                                value={formData[`alDepth${i}`] ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value === '' ? '' : parseFloat(e.target.value)
+                                  setValue(`alDepth${i}`, v)
+                                  const vals = [
+                                    i === 1 ? v : formData.alDepth1,
+                                    i === 2 ? v : formData.alDepth2,
+                                    i === 3 ? v : formData.alDepth3
+                                  ].filter(x => x !== '' && x !== null && x !== undefined && !isNaN(x))
+                                  setValue('activeLayerDepth', vals.length ? Math.round(vals.reduce((a, b) => a + Number(b), 0) / vals.length) : '')
+                                }}
+                                style={{ flex: 1, textAlign: 'center', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 8px' }} />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                          <div className="field-group">
+                            <label style={{ fontSize: '12px' }}>Moisture Type</label>
+                            <select value={formData.soilMoistureType || 'moist'} onChange={(e) => setValue('soilMoistureType', e.target.value)}>
+                              <option value="dry">Dry</option>
+                              <option value="moist">Moist</option>
+                              <option value="wet">Wet</option>
+                              <option value="saturated">Saturated</option>
+                            </select>
+                          </div>
+                          <div className="field-group">
+                            <label style={{ fontSize: '12px' }}>Standing Water</label>
+                            <select value={formData.standingWater ? 'yes' : 'no'} onChange={(e) => setValue('standingWater', e.target.value === 'yes')}>
+                              <option value="no">No</option>
+                              <option value="yes">Yes</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="field-group">
+                          <label style={{ fontSize: '12px' }}>Topography</label>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                            {[{ v: 'slope', l: 'Slope' }, { v: 'depression', l: 'Depression' }, { v: 'elevated', l: 'Elevated' }].map((t) => {
+                              const active = formData.morphology === t.v
+                              return (
+                                <button key={t.v} type="button" onClick={() => setValue('morphology', t.v)}
+                                  style={{ padding: '10px 6px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '13px', backgroundColor: active ? 'var(--primary-color)' : 'var(--bg-secondary)', color: active ? 'white' : 'var(--text-primary)' }}>
+                                  {t.l}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* EVERYTHING ELSE — full sections below */}
+                    <p style={{ fontSize: '11px', color: '#aaa', margin: '16px 0 4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>All other details</p>
+                    <Weather control={control} watch={watch} setValue={setValue} previousEntry={allEntries.length > 0 ? allEntries[allEntries.length - 1] : null} />
+                    <SoilProfile control={control} watch={watch} setValue={setValue} />
+                    <Morphology control={control} watch={watch} setValue={setValue} />
+                  </>
+                )}
                 {currentStep === 3 && (
                   <div>
                     <VegetationShort control={control} watch={watch} setValue={setValue} />
@@ -622,12 +733,6 @@ function App() {
                   </div>
                 )}
                 {currentStep === 4 && (
-                  <>
-                    <SoilProfile control={control} watch={watch} setValue={setValue} />
-                    <Morphology control={control} watch={watch} setValue={setValue} />
-                  </>
-                )}
-                {currentStep === 5 && (
                   <div className="section">
                     <div className="section-header"><h2>Review & Save</h2></div>
                     <div className="section-content" style={{ paddingTop: '10px' }}>

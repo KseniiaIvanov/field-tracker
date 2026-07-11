@@ -468,15 +468,13 @@ export function validateCompleteEntry(entry) {
   const errors = []
   const warnings = []
 
-  // Critical fields
-  const coordCheck = coordinateValidators.pair(entry.latitude, entry.longitude)
-  if (!coordCheck.isValid) {
-    errors.push(coordCheck.error)
-  }
-
-  // Required: Site photos
-  if (!entry.entryPhotos || entry.entryPhotos.length === 0) {
-    errors.push('❌ Site photo is REQUIRED - please add at least one photo of the site')
+  // Coordinates are optional. Validate the pair only if either value is filled in,
+  // so a bad manual entry is still caught but a blank one is allowed.
+  if (entry.latitude || entry.longitude) {
+    const coordCheck = coordinateValidators.pair(entry.latitude, entry.longitude)
+    if (!coordCheck.isValid) {
+      warnings.push(coordCheck.error)
+    }
   }
 
   // Optional fields with validation
