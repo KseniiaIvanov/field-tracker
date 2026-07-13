@@ -1,17 +1,21 @@
 import { useState, useEffect, useRef } from 'react'
+import piexif from 'piexifjs'
 
 const LANDSCAPE_DEFAULTS = ['RTS', 'Polygon', 'Trench', 'Shore', 'Pond', 'Hummock', 'Palsa', 'Thermokarst', 'Degraded', 'Wet Sedge', 'Dry Moss', 'Mixed']
 const ORGANIC_MATTER_TYPES = ['Live vegetation', 'Litter', 'Peat', 'Mixed']
 
-export default function PointInfo({ watch, setValue, previousEntry }) {
+export default function PointInfo({ watch, setValue, previousEntry, gpsAveraging, setGpsAveraging }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [landscapeSuggestions, setLandscapeSuggestions] = useState([])
   const [allLandscapes] = useState(LANDSCAPE_DEFAULTS)
+  const [uploadedPhoto, setUploadedPhoto] = useState(null)
+  const [photoMessage, setPhotoMessage] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const mediaRecorderRef = useRef(null)
   const audioChunksRef = useRef([])
   const recordingIntervalRef = useRef(null)
+  const gpsWatchIdRef = useRef(null)
   const data = watch()
   const voiceNotes = data.voiceNotes || []
 
@@ -97,7 +101,180 @@ export default function PointInfo({ watch, setValue, previousEntry }) {
       const minutes = String(now.getMinutes()).padStart(2, '0')
       setValue('localTime', `${hours}:${minutes}`)
     }
+
+    // Cleanup GPS watch when component unmounts
+    return () => {
+      if (gpsWatchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(gpsWatchIdRef.current)
+        gpsWatchIdRef.current = null
+      }
+    }
   }, [])
+
+  // Get GPS coordinates with high accuracy + averaging over 2 minutes (continues in background)
+  const startGPSAveraging = () => {
+    if (!('geolocation' in navigator)) {
+      alert('❌ Geolocation not supported on this device')
+      return
+    }
+
+    if (gpsAveraging) {
+      alert('⏳ Already collecting GPS data. Please wait or click "Stop GPS".')
+      return
+    }
+
+    // Initialize GPS averaging state
+    setGpsAveraging({
+      startTime: Date.now(),
+      readings: [],
+      status: '📍 Collecting GPS readings (stand still)...',
+      progress: 0
+    })
+
+    const readings = []
+    let watchId = null
+
+    const handlePosition = (position) => {
+      readings.push({
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      })
+
+      // Update state with new reading
+      setGpsAveraging(prev => ({
+        ...prev,
+        readings
+      }))
+    }
+
+    const handleError = (error) => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId)
+      }
+      setGpsAveraging(null)
+      gpsWatchIdRef.current = null
+      alert(`❌ GPS error: ${error.message}. Enable location in settings.`)
+      console.log('GPS error:', error)
+    }
+
+    try {
+      // Start collecting with high accuracy
+      watchId = navigator.geolocation.watchPosition(
+        handlePosition,
+        handleError,
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 5000
+        }
+      )
+      gpsWatchIdRef.current = watchId
+    } catch (err) {
+      setGpsAveraging(null)
+      alert(`❌ Error: ${err.message}`)
+    }
+  }
+
+  const stopGPSAveraging = () => {
+    if (!gpsAveraging) return
+
+    if (gpsWatchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(gpsWatchIdRef.current)
+      gpsWatchIdRef.current = null
+    }
+
+    const readings = gpsAveraging.readings
+    if (readings.length === 0) {
+      alert('❌ No GPS readings collected. Check signal strength.')
+      setGpsAveraging(null)
+      return
+    }
+
+    // Calculate average coordinates
+    const avgLat = readings.reduce((sum, r) => sum + r.lat, 0) / readings.length
+    const avgLon = readings.reduce((sum, r) => sum + r.lon, 0) / readings.length
+    const minAccuracy = Math.round(Math.min(...readings.map(r => r.accuracy)))
+
+    setValue('latitude', avgLat.toFixed(6))
+    setValue('longitude', avgLon.toFixed(6))
+    setValue('accuracy', minAccuracy)
+
+    setGpsAveraging(null)
+  }
+
+  // Extract GPS coordinates from photo EXIF
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const reader = new FileReader()
+      reader.onload = async (event) => {
+        try {
+          const binaryData = event.target.result
+          // Convert ArrayBuffer to binary string for piexif
+          let binary = ''
+          const bytes = new Uint8Array(binaryData)
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i])
+          }
+
+          const exifData = piexif.load(binary)
+
+          // Check if GPS data exists
+          if (exifData.GPS) {
+            const gps = exifData.GPS
+
+            // Extract latitude
+            if (gps[piexif.GPSIFD.GPSLatitude]) {
+              const latRef = String.fromCharCode(...gps[piexif.GPSIFD.GPSLatitudeRef])
+              const latArray = gps[piexif.GPSIFD.GPSLatitude]
+              const lat = latArray[0][0] / latArray[0][1] +
+                         latArray[1][0] / latArray[1][1] / 60 +
+                         latArray[2][0] / latArray[2][1] / 3600
+              const latitude = latRef === 'S' ? -lat : lat
+
+              setValue('latitude', latitude.toFixed(6))
+            }
+
+            // Extract longitude
+            if (gps[piexif.GPSIFD.GPSLongitude]) {
+              const lonRef = String.fromCharCode(...gps[piexif.GPSIFD.GPSLongitudeRef])
+              const lonArray = gps[piexif.GPSIFD.GPSLongitude]
+              const lon = lonArray[0][0] / lonArray[0][1] +
+                         lonArray[1][0] / lonArray[1][1] / 60 +
+                         lonArray[2][0] / lonArray[2][1] / 3600
+              const longitude = lonRef === 'W' ? -lon : lon
+
+              setValue('longitude', longitude.toFixed(6))
+            }
+
+            // Extract altitude if available
+            if (gps[piexif.GPSIFD.GPSAltitude]) {
+              const alt = gps[piexif.GPSIFD.GPSAltitude]
+              const altitude = alt[0] / alt[1]
+              console.log('Altitude from photo:', altitude)
+            }
+
+            setPhotoMessage('✓ GPS coordinates extracted from photo')
+          } else {
+            setPhotoMessage('⚠️ No GPS data found in photo. Enable geolocation when taking photos')
+          }
+
+          // Store photo for display
+          const photoUrl = URL.createObjectURL(file)
+          setUploadedPhoto(photoUrl)
+        } catch (err) {
+          setPhotoMessage('❌ Error reading EXIF data. Try another photo.')
+          console.error('EXIF read error:', err)
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    } catch (err) {
+      setPhotoMessage('❌ Error loading photo: ' + err.message)
+    }
+  }
 
   return (
     <div className={`section ${!isExpanded ? 'collapsed' : ''}`}>
@@ -116,6 +293,13 @@ export default function PointInfo({ watch, setValue, previousEntry }) {
               📋 Copy
             </button>
           )}
+          <button
+            type="button"
+            onClick={gpsAveraging ? stopGPSAveraging : startGPSAveraging}
+            style={{ padding: '8px 12px', backgroundColor: gpsAveraging ? '#ff6b6b' : 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '12px' }}
+          >
+            📍 {gpsAveraging ? `Stop (${Math.round((Date.now() - gpsAveraging.startTime) / 1000)}s)` : 'Get GPS'}
+          </button>
         </div>
       </div>
 
@@ -145,6 +329,26 @@ export default function PointInfo({ watch, setValue, previousEntry }) {
               <input type="time" value={data.localTime} onChange={(e) => setValue('localTime', e.target.value)} style={{ fontSize: '12px', padding: '4px' }} />
             </div>
           </div>
+
+
+          {gpsAveraging && (
+            <div style={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ width: `${gpsAveraging.progress}%`, height: '100%', backgroundColor: '#4CAF50', transition: 'width 0.3s ease' }} />
+            </div>
+          )}
+
+          {/* Coordinates (auto-filled by Get GPS, editable) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="field-group">
+              <label>Latitude</label>
+              <input type="number" step="0.000001" value={data.latitude || ''} placeholder="68.356..." onChange={(e) => setValue('latitude', e.target.value)} />
+            </div>
+            <div className="field-group">
+              <label>Longitude</label>
+              <input type="number" step="0.000001" value={data.longitude || ''} placeholder="19.234..." onChange={(e) => setValue('longitude', e.target.value)} />
+            </div>
+          </div>
+          {data.accuracy && <small style={{ color: '#666', fontSize: '11px' }}>📍 GPS accuracy: ±{data.accuracy}m</small>}
 
           {/* ROW 5: Landscape + Organic matter */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -289,11 +493,31 @@ export default function PointInfo({ watch, setValue, previousEntry }) {
               </div>
             </div>
 
-            {/* Collector */}
-            <div className="field-group" style={{ marginBottom: '8px' }}>
-              <label>Collector</label>
-              <input type="text" placeholder="Your name" value={data.collector || ''} onChange={(e) => setValue('collector', e.target.value)} />
+            {/* Collector + Coord photo */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+              <div className="field-group">
+                <label>Collector</label>
+                <input type="text" placeholder="Your name" value={data.collector || ''} onChange={(e) => setValue('collector', e.target.value)} />
+              </div>
+              <div className="field-group">
+                <label>📸 Coord Photo</label>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'inline-block', padding: '8px 10px', backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                    📸
+                    <input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                  </label>
+                  <label style={{ display: 'inline-block', padding: '8px 10px', backgroundColor: '#f0f0f0', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                    📷
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                  </label>
+                  {photoMessage && <small style={{ display: 'block', width: '100%', marginTop: '4px', fontSize: '11px', color: photoMessage.includes('✓') ? '#2e7d32' : '#c62828' }}>{photoMessage}</small>}
+                </div>
+              </div>
             </div>
+
+            {uploadedPhoto && (
+              <img src={uploadedPhoto} alt="Coord photo" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ddd' }} />
+            )}
           </div>
 
         </div>

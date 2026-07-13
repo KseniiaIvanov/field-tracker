@@ -7,6 +7,9 @@ const HYDROTILE_OPTIONS = ['Up-up', 'Up-low', 'Low-up', 'Low-low']
 export default function QuickEntry({ watch, setValue, onSave, onBack }) {
   const [landscapeSuggestions, setLandscapeSuggestions] = useState([])
   const [allLandscapes] = useState(LANDSCAPE_DEFAULTS)
+  const [isCollectingGPS, setIsCollectingGPS] = useState(false)
+  const [gpsStatus, setGpsStatus] = useState('')
+  const [gpsProgress, setGpsProgress] = useState(0)
   const data = watch()
 
   const shortVegData = data.vegetationShort || {}
@@ -27,6 +30,84 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
       setValue('date', new Date().toISOString().split('T')[0])
     }
   }, [])
+
+  const getGPSCoordinates = async () => {
+    if (!('geolocation' in navigator)) {
+      alert('❌ Geolocation not supported')
+      return
+    }
+    if (isCollectingGPS) {
+      alert('⏳ Already collecting GPS')
+      return
+    }
+
+    setIsCollectingGPS(true)
+    setGpsStatus('📍 Collecting GPS (1 min)...')
+    setGpsProgress(0)
+
+    const readings = []
+    let watchId = null
+    const durationMs = 60000
+    const startTime = Date.now()
+    let lastUpdateTime = startTime
+
+    const handlePosition = (position) => {
+      readings.push({
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      })
+
+      const elapsed = Date.now() - startTime
+      if (elapsed - lastUpdateTime > 1000) {
+        lastUpdateTime = elapsed
+        const progress = Math.min(100, Math.round((elapsed / durationMs) * 100))
+        setGpsProgress(progress)
+        setGpsStatus(`📍 ${progress}% | ${readings.length} readings`)
+      }
+    }
+
+    const handleError = (error) => {
+      // Only permission denial (code 1) is fatal. "Location unknown" / timeout
+      // (kCLErrorDomain error 0, codes 2/3) are transient — keep watching so the
+      // device can acquire a fix instead of failing on the first hiccup.
+      if (error.code === 1) {
+        navigator.geolocation.clearWatch(watchId)
+        setIsCollectingGPS(false)
+        setGpsStatus('')
+        alert('❌ Location permission denied. Enable location access for this site in your browser/phone settings.')
+        return
+      }
+      setGpsStatus(`⏳ Acquiring GPS signal… (${readings.length} reading${readings.length === 1 ? '' : 's'} so far)`)
+    }
+
+    watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 5000
+    })
+
+    setTimeout(() => {
+      navigator.geolocation.clearWatch(watchId)
+
+      if (readings.length > 0) {
+        const avgLat = readings.reduce((sum, r) => sum + r.lat, 0) / readings.length
+        const avgLon = readings.reduce((sum, r) => sum + r.lon, 0) / readings.length
+        const minAccuracy = Math.min(...readings.map(r => r.accuracy))
+
+        setValue('latitude', avgLat.toFixed(6))
+        setValue('longitude', avgLon.toFixed(6))
+        setValue('accuracy', Math.round(minAccuracy))
+
+        setGpsStatus(`✓ ${readings.length} readings, accuracy ±${Math.round(minAccuracy)}m`)
+      } else {
+        setGpsStatus('❌ No GPS readings')
+      }
+
+      setIsCollectingGPS(false)
+      setTimeout(() => setGpsStatus(''), 2000)
+    }, durationMs)
+  }
 
   const updateVegetation = (category, value) => {
     // Immutable update: create a fresh nested object so react-hook-form detects the
@@ -49,6 +130,10 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
   }
 
   const handleSave = () => {
+    if (!data.latitude || !data.longitude) {
+      alert('⚠️ GPS coordinates required — tap GET GPS above')
+      return
+    }
     if (!data.landscape) {
       alert('⚠️ Landscape type required')
       return
@@ -112,6 +197,63 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
               value={data.localTime || ''}
               onChange={(e) => setValue('localTime', e.target.value)}
             />
+          </div>
+        </div>
+
+        {/* GPS */}
+        <div className="field-group">
+          <label>GPS Coordinates</label>
+          <button
+            onClick={getGPSCoordinates}
+            disabled={isCollectingGPS}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: 'var(--primary-color)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: isCollectingGPS ? 'not-allowed' : 'pointer',
+              opacity: isCollectingGPS ? 0.6 : 1,
+              marginBottom: '8px'
+            }}
+          >
+            📍 {isCollectingGPS ? 'Collecting...' : 'GET GPS (1 min)'}
+          </button>
+
+          {gpsStatus && (
+            <div style={{ marginBottom: '8px' }}>
+              <small style={{ color: '#666', display: 'block', marginBottom: '4px' }}>{gpsStatus}</small>
+              {isCollectingGPS && (
+                <div style={{ width: '100%', height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${gpsProgress}%`, height: '100%', backgroundColor: '#4CAF50', transition: 'width 0.3s' }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <small style={{ color: '#999', fontSize: '11px' }}>Latitude</small>
+              <input
+                type="number"
+                step="0.000001"
+                value={data.latitude || ''}
+                onChange={(e) => setValue('latitude', e.target.value)}
+                placeholder="Lat"
+              />
+            </div>
+            <div>
+              <small style={{ color: '#999', fontSize: '11px' }}>Longitude</small>
+              <input
+                type="number"
+                step="0.000001"
+                value={data.longitude || ''}
+                onChange={(e) => setValue('longitude', e.target.value)}
+                placeholder="Lon"
+              />
+            </div>
           </div>
         </div>
 
