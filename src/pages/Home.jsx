@@ -1,3 +1,5 @@
+import { entryLabel } from '../utils/entryLabel'
+
 export default function Home({ setCurrentPage, allEntries, onSelectStorageFolder, deviceStoragePath, storageAvailable }) {
   const menuItems = [
     {
@@ -117,7 +119,7 @@ export default function Home({ setCurrentPage, allEntries, onSelectStorageFolder
           >
             <div className="btn-continue-content">
               <span className="btn-continue-icon">▶ Continue</span>
-              <span className="btn-continue-text">Last site: {lastEntry.siteNumber} • {lastEntry.landscape || 'No landscape'}</span>
+              <span className="btn-continue-text">Last: {entryLabel(lastEntry)} • {lastEntry.landscape || 'No landscape'}</span>
             </div>
           </button>
         </div>

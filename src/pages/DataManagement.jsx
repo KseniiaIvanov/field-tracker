@@ -1,4 +1,5 @@
 import Papa from 'papaparse'
+import { entryLabel } from '../utils/entryLabel'
 
 export default function DataManagement({ setCurrentPage, allEntries }) {
   const exportToCSV = () => {
@@ -126,7 +127,7 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
             {allEntries.map((entry, idx) => (
               <div key={idx} className="entry-item">
                 <div className="entry-header">
-                  <strong>Site {entry.siteNumber}</strong>
+                  <strong>{entryLabel(entry)}</strong>
                   <span className="entry-date">{entry.date}</span>
                 </div>
                 <div className="entry-details">

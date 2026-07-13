@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import localforage from 'localforage'
 import { useNotificationContext } from './context/NotificationContext'
 import { validateCompleteEntry } from './utils/validators'
+import { entryLabel, entrySlug } from './utils/entryLabel'
 import { processPhoto } from './utils/photoMetadata'
 import { isFileSystemAccessAvailable, requestRootDirectory, getRootDirectory, setRootDirectory, saveSiteToDevice, restoreRootDirectory } from './utils/fileSystemAccess'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -55,6 +56,7 @@ function App() {
   const [, setCarbonFluxMeasurementDefault] = useState(false)
   const [quickMode, setQuickMode] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [savedLabel, setSavedLabel] = useState('')
   const [deviceStoragePath, setDeviceStoragePath] = useState(null)
   const [, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
@@ -148,7 +150,7 @@ function App() {
             const parsed = JSON.parse(savedDraft)
             if (parsed.latitude || parsed.longitude || parsed.notes || parsed.landscape) {
               reset(parsed)
-              showSuccess(`Draft restored: Site ${parsed.siteNumber || 1}`)
+              showSuccess(`Draft restored: ${entryLabel(parsed)}`)
             } else {
               localStorage.removeItem('field-diary-draft')
             }
@@ -359,8 +361,7 @@ function App() {
   }
 
   const downloadEntryWithPhotos = async (entry) => {
-    const siteNumber = String(entry.siteNumber).padStart(3, '0')
-    const filename = `Site_${siteNumber}_${entry.date}.json`
+    const filename = `${entrySlug(entry)}_${entry.date}.json`
     const json = JSON.stringify(entry, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = window.URL.createObjectURL(blob)
@@ -390,6 +391,8 @@ function App() {
       // Time spent on this entry, from opening the form (or saving the previous one) to now
       const entryDurationSeconds = Math.round((Date.now() - entryStartTimeRef.current) / 1000)
       const entryToSave = { ...formData, entryDurationSeconds }
+      // Capture the label now, before reset() clears the collar for the next point
+      const savedEntryLabel = entryLabel(entryToSave)
 
       const newEntries = [...allEntries, entryToSave]
       await localforage.setItem('allEntries', newEntries)
@@ -450,10 +453,11 @@ function App() {
         entryPhotos: []
       })
       // Show large visual confirmation
+      setSavedLabel(savedEntryLabel)
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2000)
 
-      showSuccess(`✅ Site ${formData.siteNumber} saved! Ready for site ${nextNumber}`)
+      showSuccess(`✅ ${savedEntryLabel} saved! Ready for the next point`)
       localStorage.removeItem('field-diary-draft')
       setCurrentStep(1)
 
@@ -529,7 +533,7 @@ function App() {
                 }}>
                   <div style={{ fontSize: '36px', marginBottom: '8px' }}>✅</div>
                   <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                    Site {formData.siteNumber} saved!
+                    {savedLabel} saved!
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     Ready for next point

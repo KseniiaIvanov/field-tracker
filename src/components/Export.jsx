@@ -1,13 +1,14 @@
 import Papa from 'papaparse'
 import { useState } from 'react'
 import { downloadOrganizedZip } from '../utils/organizeByDateAndSite'
+import { entryLabel, entrySlug } from '../utils/entryLabel'
 
 export default function Export({ entries }) {
   const [expandIndividual, setExpandIndividual] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
   const exportIndividualEntry = (entry) => {
-    const filename = `entry_site${entry.siteNumber}_${entry.date}.json`
+    const filename = `entry_${entrySlug(entry)}_${entry.date}.json`
     const json = JSON.stringify(entry, null, 2)
     downloadFile(json, filename, 'application/json')
   }
@@ -147,7 +148,7 @@ export default function Export({ entries }) {
                 onClick={() => exportIndividualEntry(entry, index)}
                 style={{ padding: '7px 10px', backgroundColor: '#6750a4', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', textAlign: 'left' }}
               >
-                Site {entry.siteNumber} · {entry.date}
+                {entryLabel(entry)} · {entry.date}
               </button>
             ))}
           </div>

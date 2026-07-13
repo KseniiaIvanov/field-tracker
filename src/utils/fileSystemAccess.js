@@ -1,4 +1,5 @@
 // File System Access API wrapper for saving directly to device storage
+import { entryLabel, entrySlug } from './entryLabel'
 
 let rootDirectoryHandle = null
 
@@ -108,10 +109,9 @@ export function setRootDirectory(handle) {
 // Format entry as human-readable text
 function formatEntryAsText(entry) {
   const lines = []
-  const siteNumber = String(entry.siteNumber).padStart(3, '0')
   const sep = '-'.repeat(40)
 
-  lines.push(`FIELD DIARY - SITE ${siteNumber}`)
+  lines.push(`FIELD DIARY - ${entryLabel(entry).toUpperCase()}`)
   lines.push(sep)
 
   // Basic info
@@ -230,15 +230,15 @@ export async function saveSiteToDevice(entry, rootHandle) {
 
   const date = entry.date || new Date().toISOString().split('T')[0]
   const time = entry.localTime ? entry.localTime.replace(':', '-') : '00-00'
-  const siteNumber = String(entry.siteNumber).padStart(3, '0')
-  const baseFileName = `Site_${siteNumber}_${date}_${time}`
+  const slug = entrySlug(entry)
+  const baseFileName = `${slug}_${date}_${time}`
 
   try {
     // Create date folder
     const dateFolder = await rootHandle.getDirectoryHandle(date, { create: true })
 
     // Create site folder
-    const siteFolder = await dateFolder.getDirectoryHandle(`Site_${siteNumber}`, { create: true })
+    const siteFolder = await dateFolder.getDirectoryHandle(slug, { create: true })
 
     // Save main JSON file
     const jsonFileName = `${baseFileName}_general.json`
@@ -294,8 +294,8 @@ export async function saveSiteToDevice(entry, rootHandle) {
 
     return {
       success: true,
-      path: `${date}/Site_${siteNumber}`,
-      message: `✅ Site ${siteNumber} saved to: ${date}/Site_${siteNumber}/`
+      path: `${date}/${slug}`,
+      message: `✅ ${entryLabel(entry)} saved to: ${date}/${slug}/`
     }
   } catch (error) {
     console.error('Error saving to device:', error)

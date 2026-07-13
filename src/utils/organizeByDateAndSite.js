@@ -1,4 +1,5 @@
 import JSZip from 'jszip'
+import { entrySlug } from './entryLabel'
 
 // Convert base64 to blob
 function base64ToBlob(base64, type) {
@@ -51,13 +52,13 @@ export async function createOrganizedZip(entries) {
     const dateEntries = entriesByDate[date]
 
     dateEntries.forEach((entry) => {
-      const siteNumber = String(entry.siteNumber).padStart(3, '0')
-      const siteFolderPath = `${rootFolderName}/${date}/Site_${siteNumber}`
+      const slug = entrySlug(entry)
+      const siteFolderPath = `${rootFolderName}/${date}/${slug}`
 
       // Add main entry JSON
       const entryJson = JSON.stringify(entry, null, 2)
       zip.file(
-        `${siteFolderPath}/site_${siteNumber}.json`,
+        `${siteFolderPath}/${slug}.json`,
         entryJson
       )
 
