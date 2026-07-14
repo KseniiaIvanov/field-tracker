@@ -468,10 +468,13 @@ export function validateCompleteEntry(entry) {
   const errors = []
   const warnings = []
 
-  // Coordinates are required (captured via Get GPS on iPhone or entered manually)
-  const coordCheck = coordinateValidators.pair(entry.latitude, entry.longitude)
-  if (!coordCheck.isValid) {
-    errors.push(coordCheck.error)
+  // Coordinates are optional. Validate the pair only if either value is filled
+  // in, so a bad manual entry is still flagged but a blank one is allowed.
+  if (entry.latitude || entry.longitude) {
+    const coordCheck = coordinateValidators.pair(entry.latitude, entry.longitude)
+    if (!coordCheck.isValid) {
+      warnings.push(coordCheck.error)
+    }
   }
 
   // Optional fields with validation

@@ -130,10 +130,6 @@ export default function QuickEntry({ watch, setValue, onSave, onBack }) {
   }
 
   const handleSave = () => {
-    if (!data.latitude || !data.longitude) {
-      alert('⚠️ GPS coordinates required — tap GET GPS above')
-      return
-    }
     if (!data.landscape) {
       alert('⚠️ Landscape type required')
       return
