@@ -1,5 +1,6 @@
 import Papa from 'papaparse'
 import { entryLabel } from '../utils/entryLabel'
+import { saveFile } from '../utils/saveFile'
 
 export default function DataManagement({ setCurrentPage, allEntries }) {
   const exportToCSV = () => {
@@ -70,14 +71,7 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
 
     const csv = Papa.unparse(flatData)
     const blob = new Blob([csv], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `field-diary-${new Date().toISOString().split('T')[0]}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    saveFile(blob, `field-diary-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv')
   }
 
   const exportToJSON = () => {
@@ -88,14 +82,7 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
 
     const json = JSON.stringify(allEntries, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `field-diary-${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    saveFile(blob, `field-diary-${new Date().toISOString().split('T')[0]}.json`, 'application/json')
   }
 
   return (

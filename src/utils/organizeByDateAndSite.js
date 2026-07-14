@@ -1,5 +1,6 @@
 import JSZip from 'jszip'
 import { entrySlug } from './entryLabel'
+import { saveFile } from './saveFile'
 
 // Convert base64 to blob
 function base64ToBlob(base64, type) {
@@ -55,8 +56,20 @@ export async function createOrganizedZip(entries) {
       const slug = entrySlug(entry)
       const siteFolderPath = `${rootFolderName}/${date}/${slug}`
 
-      // Add main entry JSON
-      const entryJson = JSON.stringify(entry, null, 2)
+      // Add main entry JSON — WITHOUT the heavy base64 blobs (photos/voice are
+      // written as separate files below). Keeping the base64 here would duplicate
+      // every image 2–3× and blow past iOS Safari's memory limit on large exports.
+      const stripPhotos = (arr) => (Array.isArray(arr) ? arr.map((p) => ({ name: p.name, type: p.type, metadata: p.metadata })) : arr)
+      const slimEntry = {
+        ...entry,
+        entryPhotos: stripPhotos(entry.entryPhotos),
+        vegetationShortPhotos: stripPhotos(entry.vegetationShortPhotos),
+        vegetationLongPhotos: stripPhotos(entry.vegetationLongPhotos),
+        voiceNotes: Array.isArray(entry.voiceNotes)
+          ? entry.voiceNotes.map((n) => ({ id: n.id, duration: n.duration, timestamp: n.timestamp }))
+          : entry.voiceNotes
+      }
+      const entryJson = JSON.stringify(slimEntry, null, 2)
       zip.file(
         `${siteFolderPath}/${slug}.json`,
         entryJson
@@ -171,15 +184,7 @@ export async function downloadOrganizedZip(entries) {
     const today = new Date().toISOString().split('T')[0]
     const zip = await createOrganizedZip(entries)
     const blob = await zip.generateAsync({ type: 'blob' })
-
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `Field_Diary_${today}.zip`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    await saveFile(blob, `Field_Diary_${today}.zip`, 'application/zip')
   } catch (error) {
     console.error('Error creating organized ZIP:', error)
     throw error
