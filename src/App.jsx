@@ -61,6 +61,9 @@ function App() {
   const [, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
   const entryStartTimeRef = useRef(Date.now())
+  // Suppress draft autosave briefly after a save so a pending timer can't re-write
+  // the just-saved entry back into the draft (which would look like unsaved work).
+  const suppressDraftRef = useRef(0)
   // PWA install prompt (Android/Chrome no longer shows an automatic banner —
   // we capture the event and surface our own "Install" button instead)
   const [installPrompt, setInstallPrompt] = useState(null)
@@ -143,26 +146,26 @@ function App() {
           setAllEntries(entries)
         }
 
-        // Restore unsaved draft if present
-        const savedDraft = localStorage.getItem('field-diary-draft')
-        if (savedDraft) {
-          try {
-            const parsed = JSON.parse(savedDraft)
-            // Only restore drafts that hold genuine in-progress work. Landscape and
-            // area carry over from the previous save, so a draft with only those is
-            // not "unsaved work" — restoring it would resurface stale state.
-            const hasRealWork = parsed.latitude || parsed.longitude || parsed.notes ||
-              parsed.collar || parsed.soilTemperature || parsed.activeLayerDepth ||
-              (parsed.weather && Object.keys(parsed.weather).length > 0)
-            if (hasRealWork) {
-              reset(parsed)
-              showSuccess(`Draft restored: ${entryLabel(parsed)}`)
-            } else {
-              localStorage.removeItem('field-diary-draft')
-            }
-          } catch {
-            localStorage.removeItem('field-diary-draft')
-          }
+        // Restore an unsaved in-progress entry, including photos and the wizard
+        // step. iOS frequently reloads PWAs (after the camera or on memory
+        // pressure) — this brings you back exactly where you were, with the photo
+        // intact, instead of a partial draft you'd have to redo and re-save.
+        localStorage.removeItem('field-diary-draft') // drop the old photo-less draft format
+        const draft = await localforage.getItem('field-diary-draft-v2')
+        const f = draft && draft.form
+        // Landscape/area carry over from the previous save, so they alone don't
+        // count as "unsaved work" — only restore when there's real in-progress data.
+        const hasRealWork = f && (f.latitude || f.longitude || f.notes || f.collar ||
+          f.soilTemperature || f.activeLayerDepth ||
+          (f.entryPhotos && f.entryPhotos.length > 0) ||
+          (f.weather && Object.keys(f.weather).length > 0))
+        if (hasRealWork) {
+          reset(f)
+          if (draft.step) setCurrentStep(draft.step)
+          setCurrentPage('diary')
+          showSuccess(`Recovered your unsaved entry: ${entryLabel(f)}`)
+        } else if (draft) {
+          await localforage.removeItem('field-diary-draft-v2')
         }
       } catch (error) {
         console.error('Error loading entries from storage:', error)
@@ -284,22 +287,23 @@ function App() {
     return () => clearInterval(interval)
   }, [gpsAveraging, setValue, showSuccess])
 
-  // Bluetooth sensor reading handler
-  // Autosave draft 10s after last change (photos excluded to stay within localStorage 5MB limit)
+  // Autosave the full in-progress entry (photos included) plus the wizard step to
+  // IndexedDB a couple seconds after the last change. IndexedDB has room for the
+  // photos (localStorage did not), so an unexpected iOS reload can restore the
+  // entry completely instead of losing the photo. Cleared on a successful save.
   useEffect(() => {
     if (currentPage !== 'diary') return
-    const hasData = formData.latitude || formData.longitude || formData.notes || formData.landscape
+    const hasData = formData.latitude || formData.longitude || formData.notes ||
+      formData.landscape || formData.collar ||
+      (formData.entryPhotos && formData.entryPhotos.length > 0)
     if (!hasData) return
     const timer = setTimeout(() => {
-      try {
-        const draft = { ...formData, entryPhotos: [], vegetationShortPhotos: [], vegetationLongPhotos: [] }
-        localStorage.setItem('field-diary-draft', JSON.stringify(draft))
-      } catch (e) {
-        console.warn('Draft save failed:', e)
-      }
-    }, 10000)
+      if (Date.now() < suppressDraftRef.current) return
+      localforage.setItem('field-diary-draft-v2', { form: formData, step: currentStep })
+        .catch((e) => console.warn('Draft save failed:', e))
+    }, 2000)
     return () => clearTimeout(timer)
-  }, [formData, currentPage])
+  }, [formData, currentStep, currentPage])
 
   const copyFromPrevious = () => {
     if (allEntries.length > 0) {
@@ -465,6 +469,8 @@ function App() {
 
       showSuccess(`✅ ${savedEntryLabel} saved! Ready for the next point`)
       localStorage.removeItem('field-diary-draft')
+      suppressDraftRef.current = Date.now() + 3000
+      await localforage.removeItem('field-diary-draft-v2')
       setCurrentStep(1)
 
       // If in quick mode, show success and reset
