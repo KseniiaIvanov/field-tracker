@@ -1,6 +1,7 @@
 import Papa from 'papaparse'
 import { entryLabel } from '../utils/entryLabel'
 import { saveFile } from '../utils/saveFile'
+import { hydrateEntry } from '../utils/entryMedia'
 
 export default function DataManagement({ setCurrentPage, allEntries, onEditEntry, onDeleteEntry }) {
   const exportToCSV = () => {
@@ -74,13 +75,16 @@ export default function DataManagement({ setCurrentPage, allEntries, onEditEntry
     saveFile(blob, `field-diary-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv')
   }
 
-  const exportToJSON = () => {
+  const exportToJSON = async () => {
     if (allEntries.length === 0) {
       alert('No entries to export')
       return
     }
 
-    const json = JSON.stringify(allEntries, null, 2)
+    // Pull photos/voice back in so the JSON is a complete backup.
+    const full = []
+    for (const e of allEntries) full.push(await hydrateEntry(e))
+    const json = JSON.stringify(full, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     saveFile(blob, `field-diary-${new Date().toISOString().split('T')[0]}.json`, 'application/json')
   }

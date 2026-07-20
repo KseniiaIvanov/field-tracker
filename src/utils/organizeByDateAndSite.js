@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import { entrySlug } from './entryLabel'
 import { saveFile } from './saveFile'
+import { hydrateEntry } from './entryMedia'
 
 // Convert base64 to blob
 function base64ToBlob(base64, type) {
@@ -49,10 +50,13 @@ export async function createOrganizedZip(entries) {
   })
 
   // Create folder structure
-  Object.keys(entriesByDate).sort().forEach(date => {
+  for (const date of Object.keys(entriesByDate).sort()) {
     const dateEntries = entriesByDate[date]
 
-    dateEntries.forEach((entry) => {
+    for (const storedEntry of dateEntries) {
+      // Photos/voice live in the media store — pull them back for this one entry
+      // just before writing its files, then move on (keeps peak memory low).
+      const entry = await hydrateEntry(storedEntry)
       const slug = entrySlug(entry)
       const siteFolderPath = `${rootFolderName}/${date}/${slug}`
 
@@ -172,8 +176,8 @@ export async function createOrganizedZip(entries) {
           }
         })
       }
-    })
-  })
+    }
+  }
 
   return zip
 }

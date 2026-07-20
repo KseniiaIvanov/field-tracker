@@ -2,14 +2,16 @@ import Papa from 'papaparse'
 import { useState } from 'react'
 import { downloadOrganizedZip } from '../utils/organizeByDateAndSite'
 import { entryLabel, entrySlug } from '../utils/entryLabel'
+import { hydrateEntry } from '../utils/entryMedia'
 
 export default function Export({ entries }) {
   const [expandIndividual, setExpandIndividual] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
 
-  const exportIndividualEntry = (entry) => {
+  const exportIndividualEntry = async (entry) => {
+    const full = await hydrateEntry(entry) // pull photos/voice back in for the JSON
     const filename = `entry_${entrySlug(entry)}_${entry.date}.json`
-    const json = JSON.stringify(entry, null, 2)
+    const json = JSON.stringify(full, null, 2)
     downloadFile(json, filename, 'application/json')
   }
 

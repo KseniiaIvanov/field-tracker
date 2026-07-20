@@ -4,6 +4,7 @@ import localforage from 'localforage'
 import { useNotificationContext } from './context/NotificationContext'
 import { validateCompleteEntry } from './utils/validators'
 import { entryLabel, entrySlug } from './utils/entryLabel'
+import { dehydrateEntry, hydrateEntry, deleteEntryMedia, entryHasInlineMedia } from './utils/entryMedia'
 import { processPhoto } from './utils/photoMetadata'
 import { isFileSystemAccessAvailable, requestRootDirectory, getRootDirectory, setRootDirectory, saveSiteToDevice, restoreRootDirectory } from './utils/fileSystemAccess'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -144,8 +145,19 @@ function App() {
   useEffect(() => {
     const loadFromStorage = async () => {
       try {
-        const entries = await localforage.getItem('allEntries')
+        let entries = await localforage.getItem('allEntries')
         if (entries) {
+          // One-time migration: pull embedded photo/voice base64 out of the entries
+          // array into the separate media store, so saves stay cheap at scale. The
+          // original array is kept under a backup key in case anything goes wrong.
+          if (entries.some(entryHasInlineMedia)) {
+            const backup = await localforage.getItem('allEntries_backup_pre_media_split')
+            if (!backup) await localforage.setItem('allEntries_backup_pre_media_split', entries)
+            const migrated = []
+            for (const e of entries) migrated.push(await dehydrateEntry(e))
+            await localforage.setItem('allEntries', migrated)
+            entries = migrated
+          }
           setAllEntries(entries)
         }
 
@@ -263,12 +275,14 @@ function App() {
     if (currentPage === 'home') setEditingIndex(null)
   }, [currentPage])
 
-  // Load an existing entry into the diary form for editing (from Data Management)
-  const editEntry = (index) => {
+  // Load an existing entry into the diary form for editing (from Data Management).
+  // Photos live in the media store now, so hydrate them back before showing the form.
+  const editEntry = async (index) => {
     const entry = allEntries[index]
     if (!entry) return
+    const full = await hydrateEntry(entry)
     setEditingIndex(index)
-    reset(entry)
+    reset(full)
     setCurrentStep(1)
     setCurrentPage('diary')
   }
@@ -280,6 +294,7 @@ function App() {
     const newEntries = allEntries.filter((_, i) => i !== index)
     await localforage.setItem('allEntries', newEntries)
     setAllEntries(newEntries)
+    await deleteEntryMedia(entry)
     showSuccess(`Deleted ${entryLabel(entry)}`)
   }
 
@@ -434,13 +449,18 @@ function App() {
       // Time spent on this entry (only meaningful for a new entry; keep the
       // original value when editing an existing one).
       const entryDurationSeconds = Math.round((Date.now() - entryStartTimeRef.current) / 1000)
-      const entryToSave = isEditing ? { ...formData } : { ...formData, entryDurationSeconds }
+      const fullEntry = isEditing ? { ...formData } : { ...formData, entryDurationSeconds }
       // Capture the label now, before reset() clears the collar for the next point
-      const savedEntryLabel = entryLabel(entryToSave)
+      const savedEntryLabel = entryLabel(fullEntry)
 
+      // Store the entry with its photos/voice moved to the separate media store,
+      // so the entries array stays small and this write is cheap regardless of how
+      // many sites already exist. `fullEntry` (with media) is still used below for
+      // the per-point backup download.
+      const storedEntry = await dehydrateEntry(fullEntry)
       const newEntries = isEditing
-        ? allEntries.map((e, i) => (i === editingIndex ? entryToSave : e))
-        : [...allEntries, entryToSave]
+        ? allEntries.map((e, i) => (i === editingIndex ? storedEntry : e))
+        : [...allEntries, storedEntry]
       await localforage.setItem('allEntries', newEntries)
       setAllEntries(newEntries)
 
@@ -464,7 +484,7 @@ function App() {
       try {
         const rootDir = getRootDirectory()
         if (rootDir) {
-          await saveSiteToDevice(entryToSave, rootDir)
+          await saveSiteToDevice(fullEntry, rootDir)
           console.log(`✅ Site saved to device storage`)
         }
       } catch (deviceError) {
@@ -472,7 +492,7 @@ function App() {
       }
 
       // Auto-download entry as individual file (backup)
-      downloadEntryWithPhotos(entryToSave)
+      downloadEntryWithPhotos(fullEntry)
 
       // Keep carbonFluxMeasurement state persistent for next entry
       const persistedCarbonFlux = formData.carbonFluxMeasurement
