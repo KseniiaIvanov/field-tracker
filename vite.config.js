@@ -8,8 +8,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // New versions activate automatically (no manual cache bump needed).
-      registerType: 'autoUpdate',
+      // A new version installs quietly in the background and only takes effect the
+      // next time the app is fully closed and reopened. This is critical for field
+      // use: 'autoUpdate' would reload the page mid-entry when a new version ships,
+      // wiping in-progress data. 'prompt' keeps the running session untouched.
+      registerType: 'prompt',
       // The service worker registration script is injected automatically.
       injectRegister: 'auto',
       // Keep the existing, hand-tuned public/manifest.json (share_target, shortcuts, etc.)
@@ -34,10 +37,12 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         // SPA offline fallback: any in-app navigation resolves to the cached shell.
         navigateFallback: '/field-tracker/index.html',
-        // Replace the previous manual service worker immediately and drop its old caches.
+        // Drop caches from superseded service workers.
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+        // Do NOT take over or reload active tabs — let the new worker wait until the
+        // app is next launched, so a deploy never disrupts an in-progress entry.
+        clientsClaim: false,
+        skipWaiting: false,
       },
     }),
   ],

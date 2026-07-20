@@ -148,7 +148,13 @@ function App() {
         if (savedDraft) {
           try {
             const parsed = JSON.parse(savedDraft)
-            if (parsed.latitude || parsed.longitude || parsed.notes || parsed.landscape) {
+            // Only restore drafts that hold genuine in-progress work. Landscape and
+            // area carry over from the previous save, so a draft with only those is
+            // not "unsaved work" — restoring it would resurface stale state.
+            const hasRealWork = parsed.latitude || parsed.longitude || parsed.notes ||
+              parsed.collar || parsed.soilTemperature || parsed.activeLayerDepth ||
+              (parsed.weather && Object.keys(parsed.weather).length > 0)
+            if (hasRealWork) {
               reset(parsed)
               showSuccess(`Draft restored: ${entryLabel(parsed)}`)
             } else {
