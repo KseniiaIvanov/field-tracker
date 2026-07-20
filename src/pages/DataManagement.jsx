@@ -2,7 +2,7 @@ import Papa from 'papaparse'
 import { entryLabel } from '../utils/entryLabel'
 import { saveFile } from '../utils/saveFile'
 
-export default function DataManagement({ setCurrentPage, allEntries }) {
+export default function DataManagement({ setCurrentPage, allEntries, onEditEntry, onDeleteEntry }) {
   const exportToCSV = () => {
     if (allEntries.length === 0) {
       alert('No entries to export')
@@ -115,12 +115,26 @@ export default function DataManagement({ setCurrentPage, allEntries }) {
               <div key={idx} className="entry-item">
                 <div className="entry-header">
                   <strong>{entryLabel(entry)}</strong>
-                  <span className="entry-date">{entry.date}</span>
+                  <span className="entry-date">{entry.date} {entry.localTime || ''}</span>
                 </div>
                 <div className="entry-details">
                   <span>{entry.landscape}</span>
                   <span>{entry.terrestrialAquatic}</span>
                   <span>{entry.weather?.precipitation || 'No rain'}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  <button
+                    onClick={() => onEditEntry && onEditEntry(idx)}
+                    style={{ flex: 1, padding: '8px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => onDeleteEntry && onDeleteEntry(idx)}
+                    style={{ padding: '8px 12px', backgroundColor: '#ffebee', color: '#c62828', border: '1px solid #ffcdd2', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' }}
+                  >
+                    🗑 Delete
+                  </button>
                 </div>
               </div>
             ))}

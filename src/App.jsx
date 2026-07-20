@@ -57,6 +57,9 @@ function App() {
   const [quickMode, setQuickMode] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [savedLabel, setSavedLabel] = useState('')
+  // When set, the diary form is editing an existing entry (by index) rather than
+  // creating a new one — saving updates that entry in place instead of appending.
+  const [editingIndex, setEditingIndex] = useState(null)
   const [deviceStoragePath, setDeviceStoragePath] = useState(null)
   const [, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
@@ -162,6 +165,7 @@ function App() {
         if (hasRealWork) {
           reset(f)
           if (draft.step) setCurrentStep(draft.step)
+          if (draft.editingIndex !== undefined && draft.editingIndex !== null) setEditingIndex(draft.editingIndex)
           setCurrentPage('diary')
           showSuccess(`Recovered your unsaved entry: ${entryLabel(f)}`)
         } else if (draft) {
@@ -253,6 +257,32 @@ function App() {
     }
   }, [currentPage])
 
+  // Being on Home means we're not editing anything. editEntry() jumps straight to
+  // the diary (never through Home), so this only clears a stale edit link.
+  useEffect(() => {
+    if (currentPage === 'home') setEditingIndex(null)
+  }, [currentPage])
+
+  // Load an existing entry into the diary form for editing (from Data Management)
+  const editEntry = (index) => {
+    const entry = allEntries[index]
+    if (!entry) return
+    setEditingIndex(index)
+    reset(entry)
+    setCurrentStep(1)
+    setCurrentPage('diary')
+  }
+
+  const deleteEntry = async (index) => {
+    const entry = allEntries[index]
+    if (!entry) return
+    if (!window.confirm(`Delete ${entryLabel(entry)}? This cannot be undone.`)) return
+    const newEntries = allEntries.filter((_, i) => i !== index)
+    await localforage.setItem('allEntries', newEntries)
+    setAllEntries(newEntries)
+    showSuccess(`Deleted ${entryLabel(entry)}`)
+  }
+
   // Monitor GPS averaging in background and auto-finalize after 120 seconds
   useEffect(() => {
     if (!gpsAveraging) return
@@ -299,14 +329,15 @@ function App() {
     if (!hasData) return
     const timer = setTimeout(() => {
       if (Date.now() < suppressDraftRef.current) return
-      localforage.setItem('field-diary-draft-v2', { form: formData, step: currentStep })
+      localforage.setItem('field-diary-draft-v2', { form: formData, step: currentStep, editingIndex })
         .catch((e) => console.warn('Draft save failed:', e))
     }, 2000)
     return () => clearTimeout(timer)
-  }, [formData, currentStep, currentPage])
+  }, [formData, currentStep, currentPage, editingIndex])
 
   const copyFromPrevious = () => {
     if (allEntries.length > 0) {
+      setEditingIndex(null) // copy starts a new entry, not an edit
       const lastEntry = allEntries[allEntries.length - 1]
       const now = new Date()
       const hours = String(now.getHours()).padStart(2, '0')
@@ -398,15 +429,36 @@ function App() {
       // Show warnings if any
       validation.warnings.forEach(warning => console.warn(`⚠️ ${warning}`))
 
-      // Time spent on this entry, from opening the form (or saving the previous one) to now
+      const isEditing = editingIndex !== null
+
+      // Time spent on this entry (only meaningful for a new entry; keep the
+      // original value when editing an existing one).
       const entryDurationSeconds = Math.round((Date.now() - entryStartTimeRef.current) / 1000)
-      const entryToSave = { ...formData, entryDurationSeconds }
+      const entryToSave = isEditing ? { ...formData } : { ...formData, entryDurationSeconds }
       // Capture the label now, before reset() clears the collar for the next point
       const savedEntryLabel = entryLabel(entryToSave)
 
-      const newEntries = [...allEntries, entryToSave]
+      const newEntries = isEditing
+        ? allEntries.map((e, i) => (i === editingIndex ? entryToSave : e))
+        : [...allEntries, entryToSave]
       await localforage.setItem('allEntries', newEntries)
       setAllEntries(newEntries)
+
+      // Editing: update in place, then return to the list. Skip the new-entry
+      // reset/increment and the per-point backup download.
+      if (isEditing) {
+        setEditingIndex(null)
+        suppressDraftRef.current = Date.now() + 3000
+        localStorage.removeItem('field-diary-draft')
+        await localforage.removeItem('field-diary-draft-v2')
+        setSavedLabel(savedEntryLabel)
+        setSaveSuccess(true)
+        setTimeout(() => setSaveSuccess(false), 2000)
+        showSuccess(`✅ ${savedEntryLabel} updated`)
+        setCurrentStep(1)
+        setCurrentPage('data')
+        return
+      }
 
       // Save to device storage if available
       try {
@@ -570,7 +622,7 @@ function App() {
                     <div style={{ display: 'flex', gap: '6px' }}>
                       {currentStep === 1 && (
                         <button
-                          onClick={() => setQuickMode(true)}
+                          onClick={() => { setEditingIndex(null); setQuickMode(true) }}
                           style={{ padding: '11px 18px', fontSize: '15px', minHeight: '42px', whiteSpace: 'nowrap', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}
                         >Quick</button>
                       )}
@@ -581,6 +633,13 @@ function App() {
                       )}
                     </div>
                   </div>
+
+              {editingIndex !== null && (
+                <div style={{ marginBottom: '10px', padding: '8px 12px', backgroundColor: 'rgba(255,152,0,0.12)', border: '1px solid #ff9800', borderRadius: '6px', fontSize: '12px', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <span>✏️ Editing an existing entry — saving updates it in place.</span>
+                  <button onClick={() => { setEditingIndex(null); setCurrentPage('data') }} style={{ padding: '4px 10px', backgroundColor: 'transparent', border: '1px solid #ff9800', color: 'var(--text-primary)', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>Cancel</button>
+                </div>
+              )}
 
               {/* STEP ROW: ← arrow | Step X/Y · Name | → arrow */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
@@ -857,7 +916,7 @@ function App() {
             <Settings setCurrentPage={setCurrentPage} />
           )}
           {currentPage === 'data' && (
-            <DataManagement setCurrentPage={setCurrentPage} allEntries={allEntries} />
+            <DataManagement setCurrentPage={setCurrentPage} allEntries={allEntries} onEditEntry={editEntry} onDeleteEntry={deleteEntry} />
           )}
           {currentPage === 'help' && (
             <Help setCurrentPage={setCurrentPage} />
