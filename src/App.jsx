@@ -148,15 +148,25 @@ function App() {
         let entries = await localforage.getItem('allEntries')
         if (entries) {
           // One-time migration: pull embedded photo/voice base64 out of the entries
-          // array into the separate media store, so saves stay cheap at scale. The
-          // original array is kept under a backup key in case anything goes wrong.
+          // array into the separate media store, so saves stay cheap at scale.
+          //
+          // Memory-safe on phones: migrate ONE entry at a time and replace it in
+          // place, so each entry's large base64 becomes collectable as we go and
+          // peak memory never exceeds what a normal save already used. We do NOT
+          // make a full-array backup copy here — that transiently doubles memory
+          // (hundreds of MB) and OOM-crashes iOS; the user's exported ZIP/JSON is
+          // the backup instead.
           if (entries.some(entryHasInlineMedia)) {
-            const backup = await localforage.getItem('allEntries_backup_pre_media_split')
-            if (!backup) await localforage.setItem('allEntries_backup_pre_media_split', entries)
-            const migrated = []
-            for (const e of entries) migrated.push(await dehydrateEntry(e))
-            await localforage.setItem('allEntries', migrated)
-            entries = migrated
+            for (let i = 0; i < entries.length; i++) {
+              if (entryHasInlineMedia(entries[i])) {
+                // Replace in place: the old base64 becomes collectable immediately,
+                // so memory trends DOWN as we go instead of piling up.
+                entries[i] = await dehydrateEntry(entries[i])
+              }
+            }
+            // Single write at the end — by now the array is slim (no base64), so
+            // this serialization is small.
+            await localforage.setItem('allEntries', entries)
           }
           setAllEntries(entries)
         }
