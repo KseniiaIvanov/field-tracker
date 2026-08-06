@@ -36,16 +36,19 @@ function getCurrentUTCOffset() {
   return `${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }
 
-// Initialize default short vegetation categories
-function getDefaultVegetationShort() {
-  const categories = [
-    'Shrubs', 'Dwarf Shrubs', 'Grass', 'Sedges',
-    'Green Mosses', 'Sphagnum Mosses', 'Brown Mosses',
-    'Lichens', 'Bare Peat', 'Litter Standing Dead'
-  ]
+// Built-in short vegetation categories
+const BASE_VEG_CATEGORIES = [
+  'Shrubs', 'Dwarf Shrubs', 'Grass', 'Sedges',
+  'Green Mosses', 'Sphagnum Mosses', 'Brown Mosses',
+  'Lichens', 'Bare Peat', 'Litter Standing Dead'
+]
+
+// Blank short-vegetation object: the built-in categories plus any custom ones the
+// user added in the diary (persisted so they carry to every following entry).
+function getDefaultVegetationShort(customCategories = []) {
   const result = {}
-  categories.forEach(cat => {
-    result[cat] = { coverage: 0, height: '' }
+  ;[...BASE_VEG_CATEGORIES, ...customCategories].forEach(cat => {
+    if (!result[cat]) result[cat] = { coverage: 0, height: '' }
   })
   return result
 }
@@ -61,6 +64,9 @@ function App() {
   // When set, the diary form is editing an existing entry (by index) rather than
   // creating a new one — saving updates that entry in place instead of appending.
   const [editingIndex, setEditingIndex] = useState(null)
+  // Custom short-vegetation categories the user added inside the diary. Persisted
+  // so they appear in every following entry, not just the one they were added to.
+  const [customVegCategories, setCustomVegCategories] = useState([])
   const [deviceStoragePath, setDeviceStoragePath] = useState(null)
   const [, setStorageReady] = useState(false)
   const [gpsAveraging, setGpsAveraging] = useState(null) // { startTime, readings: [], status, progress }
@@ -193,6 +199,16 @@ function App() {
         } else if (draft) {
           await localforage.removeItem('field-diary-draft-v2')
         }
+
+        // Load persisted custom vegetation categories and make sure they appear in
+        // the current form (added at 0 if missing, without wiping any existing values).
+        const savedCustomVeg = await localforage.getItem('customVegCategories')
+        if (Array.isArray(savedCustomVeg) && savedCustomVeg.length > 0) {
+          setCustomVegCategories(savedCustomVeg)
+          const currentVeg = watch('vegetationShort') || {}
+          const merged = { ...getDefaultVegetationShort(savedCustomVeg), ...currentVeg }
+          setValue('vegetationShort', merged)
+        }
       } catch (error) {
         console.error('Error loading entries from storage:', error)
         showError('Failed to load saved entries')
@@ -306,6 +322,34 @@ function App() {
     setAllEntries(newEntries)
     await deleteEntryMedia(entry)
     showSuccess(`Deleted ${entryLabel(entry)}`)
+  }
+
+  // A blank new entry (keeps only the collector). Used to clear the form after an
+  // edit so the edited record's data doesn't bleed into the next new entry.
+  const buildFreshEntry = () => ({
+    collector: formData.collector || '',
+    siteNumber: allEntries.reduce((m, e) => Math.max(m, e.siteNumber || 0), 0) + 1,
+    area: '', collar: '',
+    date: new Date().toISOString().split('T')[0],
+    localTime: '',
+    utcOffset: getCurrentUTCOffset(),
+    latitude: '', longitude: '', accuracy: '',
+    landscape: '', disturbance: '', hydrotiles: '', organicMatterType: '',
+    voiceNotes: [], soilMoisture: '', soilTemperature: '', activeLayerDepth: '',
+    alDepth1: '', alDepth2: '', alDepth3: '',
+    standingWater: false, standingWaterDepth: '', soilMoistureType: 'moist',
+    terrestrialAquatic: 'terrestrial', shadowExperimentNetting: '0', carbonFluxMeasurement: false,
+    weather: {}, vegetationShort: getDefaultVegetationShort(customVegCategories),
+    vegetationShortPhotos: [], vegetationShortNotes: '',
+    vegetationLong: [], vegetationLongPhotos: [], vegetationLongNotes: '',
+    soilProfile: [], morphology: '', notes: '', entryPhotos: []
+  })
+
+  const cancelEdit = () => {
+    setEditingIndex(null)
+    reset(buildFreshEntry())
+    setCurrentStep(1)
+    setCurrentPage('data')
   }
 
   // Monitor GPS averaging in background and auto-finalize after 120 seconds
@@ -463,6 +507,18 @@ function App() {
       // Capture the label now, before reset() clears the collar for the next point
       const savedEntryLabel = entryLabel(fullEntry)
 
+      // Remember any custom vegetation categories added in this entry so they carry
+      // to the next measurements (persisted).
+      const newCustomVeg = Object.keys(fullEntry.vegetationShort || {})
+        .filter((k) => !BASE_VEG_CATEGORIES.includes(k) && !customVegCategories.includes(k))
+      const effectiveCustomVeg = newCustomVeg.length
+        ? [...customVegCategories, ...newCustomVeg]
+        : customVegCategories
+      if (newCustomVeg.length) {
+        setCustomVegCategories(effectiveCustomVeg)
+        await localforage.setItem('customVegCategories', effectiveCustomVeg)
+      }
+
       // Store the entry with its photos/voice moved to the separate media store,
       // so the entries array stays small and this write is cheap regardless of how
       // many sites already exist. `fullEntry` (with media) is still used below for
@@ -481,6 +537,9 @@ function App() {
         suppressDraftRef.current = Date.now() + 3000
         localStorage.removeItem('field-diary-draft')
         await localforage.removeItem('field-diary-draft-v2')
+        // Clear the form to a blank new entry so the edited record's data does not
+        // carry into the next one.
+        reset(buildFreshEntry())
         setSavedLabel(savedEntryLabel)
         setSaveSuccess(true)
         setTimeout(() => setSaveSuccess(false), 2000)
@@ -533,7 +592,7 @@ function App() {
         standingWaterDepth: '',
         carbonFluxMeasurement: persistedCarbonFlux,
         weather: {},
-        vegetationShort: getDefaultVegetationShort(),
+        vegetationShort: getDefaultVegetationShort(effectiveCustomVeg),
         vegetationShortPhotos: [],
         vegetationShortNotes: '',
         vegetationLong: [],
@@ -667,7 +726,7 @@ function App() {
               {editingIndex !== null && (
                 <div style={{ marginBottom: '10px', padding: '8px 12px', backgroundColor: 'rgba(255,152,0,0.12)', border: '1px solid #ff9800', borderRadius: '6px', fontSize: '12px', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <span>✏️ Editing an existing entry — saving updates it in place.</span>
-                  <button onClick={() => { setEditingIndex(null); setCurrentPage('data') }} style={{ padding: '4px 10px', backgroundColor: 'transparent', border: '1px solid #ff9800', color: 'var(--text-primary)', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>Cancel</button>
+                  <button onClick={cancelEdit} style={{ padding: '4px 10px', backgroundColor: 'transparent', border: '1px solid #ff9800', color: 'var(--text-primary)', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', whiteSpace: 'nowrap' }}>Cancel</button>
                 </div>
               )}
 
